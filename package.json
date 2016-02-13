@@ -1,0 +1,36 @@
+{
+  "name": "tactics",
+  "description": "",
+  "readme": "",
+  "repository": "",
+  "version": "0.0.0",
+  "devDependencies": {
+    "bower": "*",
+    "browserify": "*",
+    "del": "*",
+    "gulp": "*",
+    "gulp-concat": "*",
+    "gulp-connect": "*",
+    "gulp-download": "*",
+    "gulp-if": "*",
+    "gulp-jshint": "^2.0.0",
+    "gulp-minify-css": "*",
+    "gulp-minify-html": "*",
+    "gulp-processhtml": "*",
+    "gulp-rename": "*",
+    "gulp-streamify": "*",
+    "gulp-uglify": "*",
+    "gulp-util": "*",
+    "gulp-watch": "*",
+    "jshint": "^2.9.1",
+    "tiny-lr": "*",
+    "vinyl-paths": "*",
+    "vinyl-source-stream": "*",
+    "watchify": "*"
+  },
+  "scripts": {
+    "post-install": "node ./node_modules/bower/bin/bower install",
+    "start": "node ./node_modules/gulp/bin/gulp.js",
+    "build": "node ./node_modules/gulp/bin/gulp.js build"
+  }
+}
