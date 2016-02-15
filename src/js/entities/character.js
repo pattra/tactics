@@ -28,6 +28,7 @@ const Character = function (game, x, y, properties) {
   };
 
   this.changeLoc = (loc, x, y) => {
+    console.log('updating', this.name, loc, x, y);
     this.loc = loc;
     this.x = x;
     this.y = y;

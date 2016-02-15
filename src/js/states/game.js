@@ -100,7 +100,7 @@ Game.prototype = {
 
   selectCharacter: function (character) {
     if (this.charFocus && this.charFocus !== character.loc
-        && this.playerMap[this.charFocus].character) {
+        && this.playerMap[this.charFocus].character !== character) {
       this.playerMap[this.charFocus].character.toggleSelect();
     }
 
@@ -113,32 +113,40 @@ Game.prototype = {
     character.toggleSelect();
   },
 
-  _moveCharacter: function (loc) {
+  _enableMove: function (loc) {
     const char = this.playerMap[loc].character;
     this.playerMap.forEach((val, index) => {
-      val.tile.setStatus('selectable');
       val.tile.inputEnabled = true;
+      if (val.character) val.character.inputEnabled = false;
+
+      val.tile.setStatus('selectable');
       val.tile.events.onInputDown.add(() => { this._selectTile('move', loc, index); });
     });
   },
 
-  _selectTile: function (action, loc, target) {
-    const slot = this.playerMap[loc];
+  _selectTile: function (action, origin, target) {
+    const originSlot = this.playerMap[origin];
     const targetSlot = this.playerMap[target];
 
     if (action === 'move') {
-      const char = slot.character;
+      const char = originSlot.character;
+      const swapChar = targetSlot.character;
       char.changeLoc(target, targetSlot.x, targetSlot.y);
+      if (swapChar) swapChar.changeLoc(origin, originSlot.x, originSlot.y);
 
       this.playerMap.forEach((val) => {
         val.tile.setStatus('default');
+        if (val.character) {
+          val.character.inputEnabled = true;
+          val.character.onHover(false);
+        }
       });
     }
   },
 
   _actionHandler: function (action, params) {
     if (action === 'move') {
-      this._moveCharacter(params.loc);
+      this._enableMove(params.loc);
     }
   },
 };

@@ -15,7 +15,7 @@ const CharBattleDetail = function (game, x, y, properties) {
   /* actions */
   this.text.move = game.add.text(0, game.world.centerY + 100, 'Move Character', style, this.vitals);
   this.text.move.inputEnabled = true;
-  this.text.move.events.onInputDown.add(() => {this.handler('move', { loc: properties.loc });});
+  this.text.move.events.onInputDown.add(() => { this.handler('move', { loc: properties.loc }); });
 
   this.toggleDisplay = () => {
     this.vitals.visible = !this.vitals.visible;
