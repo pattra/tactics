@@ -126,20 +126,21 @@ Game.prototype = {
         && this.playerMap[this.charFocus].character) {
       this.playerMap[this.charFocus].character.toggleSelect();
     }
+
     if (this.charFocus && this.playerMap[this.charFocus].character === character) {
       this.charFocus = null;
     } else {
       this.charFocus = character.loc;
     }
-
-    console.log("trying to clear", this.charFocus, character.name, character.loc);
-    character.toggleSelect();
   },
 
   _enableMove: function (loc) {
     this.playerMap.forEach((val, index) => {
       val.tile.inputEnabled = true;
-      if (val.character) val.character.sprite.enableClick = false;
+      if (val.character) {
+        val.character.sprite.events.onInputDown.removeAll();
+        val.character.sprite.events.onInputDown.add(() => { this._moveCharacter(loc, index); });
+      }
 
       val.tile.setStatus('selectable');
       val.tile.events.onInputDown.add(() => { this._moveCharacter(loc, index); });
@@ -147,7 +148,6 @@ Game.prototype = {
   },
 
   _moveCharacter: function (origin, target) {
-    console.log("want to move from", origin, "to" , target);
     const originSlot = this.playerMap[origin];
     const targetSlot = this.playerMap[target];
     const char = originSlot.character;
@@ -165,14 +165,13 @@ Game.prototype = {
       val.tile.setStatus('default');
       val.tile.events.onInputDown.removeAll();
       if (val.character) {
-        val.character.enableClick = true;
+        val.character.sprite.events.onInputDown.removeAll();
+        val.character.sprite.events.onInputDown.add(val.character.onClick);
         val.character.onHover(false);
       }
     });
 
     this.charFocus = target;
-    console.log("changed map", this.playerMap);
-    console.log("charFocus is now", this.charFocus);
   },
 
   _actionHandler: function (action, loc) {

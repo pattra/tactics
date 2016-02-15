@@ -18,7 +18,6 @@ const Character = function (game, x, y, properties) {
   this.maxHP = properties.maxHP;
   this.currentHP = properties.maxHP;
   this.team = properties.team;
-  this.enableClick = true;
 
   /* FUNCTIONS */
   this.onHover = (cursorOn) => {
@@ -26,7 +25,7 @@ const Character = function (game, x, y, properties) {
   };
 
   this.toggleSelect = () => {
-    if (this.enableClick) this.detail.toggleDisplay();
+    this.detail.toggleDisplay();
   };
 
   this.changeHP = (amt) => {
@@ -41,12 +40,17 @@ const Character = function (game, x, y, properties) {
     this.sprite.y = y;
   };
 
+  this.onClick = () => {
+    this.handler('select', this.loc);
+    this.detail.toggleDisplay();
+  };
+
   this.sprite = game.add.sprite(x, y, properties.sprite);
 
   this.sprite.inputEnabled = true;
   this.sprite.events.onInputOver.add(() => { this.onHover(true); });
   this.sprite.events.onInputOut.add(() => { this.onHover(false); });
-  this.sprite.events.onInputDown.add(() => { this.handler('select', this.loc); });
+  this.sprite.events.onInputDown.add(this.onClick);
 };
 
 // Character.prototype = Object.create(Phaser.Sprite.prototype);

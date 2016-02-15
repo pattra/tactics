@@ -10,6 +10,7 @@ const Tile = function (game, x, y) {
   };
 
   Phaser.Sprite.call(this, game, x, y, 'tiles', 'grass');
+
   game.add.existing(this);
 };
 
