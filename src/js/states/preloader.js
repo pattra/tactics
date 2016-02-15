@@ -13,8 +13,14 @@ Preloader.prototype = {
 
     this.load.onLoadComplete.addOnce(this.onLoadComplete, this);
     this.load.setPreloadSprite(this.asset);
-    this.load.image('testsprite', 'assets/test.png');
-    this.load.image('testtile', 'assets/default_tile.png');
+
+    /* loading sprites */
+    // this.load.image('grass', 'assets/tile_grass.png');
+    this.load.image('ally', 'assets/ally.png');
+    this.load.image('enemy', 'assets/enemy.png');
+
+    /* loading texture atlases */
+    this.load.atlasJSONHash('tiles', 'assets/tiles.png', 'assets/tiles.json');
   },
 
   create: function () {
@@ -23,11 +29,11 @@ Preloader.prototype = {
 
   update: function () {
     if (!!this.ready) {
-      this.game.state.start('Menu');
+      this.game.state.start('Game', true, false, { test: 1 });
     }
   },
 
   onLoadComplete: function () {
     this.ready = true;
-  }
+  },
 };
