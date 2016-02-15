@@ -5,12 +5,20 @@ const Detail = require('../entities/charBattleDetail');
 
 const Character = function (game, x, y, properties) {
   /* PROPERTIES */
-  this.preview = new Preview(game, x, y, properties);
-  this.detail = new Detail(game, x, y, properties);
-  this.name = properties.name;
   this.loc = properties.loc;
+
+  this.handler = properties.actionHandler;
+  this.UIHandler = (action) => {
+    this.handler(action, this.loc);
+  };
+
+  this.preview = new Preview(game, x, y, properties);
+  this.detail = new Detail(game, x, y, properties, this.UIHandler);
+  this.name = properties.name;
   this.maxHP = properties.maxHP;
   this.currentHP = properties.maxHP;
+  this.team = properties.team;
+  this.enableClick = true;
 
   /* FUNCTIONS */
   this.onHover = (cursorOn) => {
@@ -18,7 +26,7 @@ const Character = function (game, x, y, properties) {
   };
 
   this.toggleSelect = () => {
-    this.detail.toggleDisplay();
+    if (this.enableClick) this.detail.toggleDisplay();
   };
 
   this.changeHP = (amt) => {
@@ -28,17 +36,20 @@ const Character = function (game, x, y, properties) {
   };
 
   this.changeLoc = (loc, x, y) => {
-    console.log('updating', this.name, loc, x, y);
     this.loc = loc;
-    this.x = x;
-    this.y = y;
+    this.sprite.x = x;
+    this.sprite.y = y;
   };
 
-  Phaser.Sprite.call(this, game, x, y, properties.sprite);
-  game.add.existing(this);
+  this.sprite = game.add.sprite(x, y, properties.sprite);
+
+  this.sprite.inputEnabled = true;
+  this.sprite.events.onInputOver.add(() => { this.onHover(true); });
+  this.sprite.events.onInputOut.add(() => { this.onHover(false); });
+  this.sprite.events.onInputDown.add(() => { this.handler('select', this.loc); });
 };
 
-Character.prototype = Object.create(Phaser.Sprite.prototype);
+// Character.prototype = Object.create(Phaser.Sprite.prototype);
 Character.prototype.constructor = Character;
 
 /**

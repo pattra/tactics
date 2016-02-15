@@ -1,10 +1,10 @@
 'use strict';
 
-const CharBattleDetail = function (game, x, y, properties) {
+const CharBattleDetail = function (game, x, y, properties, handler) {
   this.vitals = game.add.group();
   this.vitals.visible = false;
   this.text = {};
-  this.handler = properties.actionHandler;
+  this.handler = handler;
 
   const style = { font: '24px Arial', fill: '#ff0044' };
 
@@ -15,7 +15,11 @@ const CharBattleDetail = function (game, x, y, properties) {
   /* actions */
   this.text.move = game.add.text(0, game.world.centerY + 100, 'Move Character', style, this.vitals);
   this.text.move.inputEnabled = true;
-  this.text.move.events.onInputDown.add(() => { this.handler('move', { loc: properties.loc }); });
+  this.text.move.events.onInputDown.add(() => { this.handler('move'); });
+
+  this.text.attack = game.add.text(0, game.world.centerY + 150, 'Attack', style, this.vitals);
+  this.text.attack.inputEnabled = true;
+  this.text.attack.events.onInputDown.add(() => { this.handler('attack', { loc: properties.loc, ability: 'standard' }); });
 
   this.toggleDisplay = () => {
     this.vitals.visible = !this.vitals.visible;

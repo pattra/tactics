@@ -30,6 +30,23 @@ const PLAYER_FILE = {
   ],
 };
 
+const LEVEL_MAP = {
+  enemies: [
+    {
+      name: 'baddie 1',
+      maxHP: 3,
+      defaultLoc: 0,
+      loc: 0,
+    },
+    {
+      name: 'baddie 2',
+      maxHP: 5,
+      defaultLoc: 6,
+      loc: 6,
+    },
+  ],
+};
+
 const Game = function () {
   this.charFocus = null;
   this.playerMap = [];
@@ -67,7 +84,7 @@ Game.prototype = {
         enemyTile = new Tile(this.game, j * 100 + mapOffset, i * 100);
         this.enemyMap.push({
           tile: enemyTile,
-          x: j * 100,
+          x: j * 100 + mapOffset,
           y: i * 100,
         });
       }
@@ -82,71 +99,87 @@ Game.prototype = {
         sprite: 'ally',
         actionHandler: this._actionHandler.bind(this),
       }));
-
-      slot.character.inputEnabled = true;
-      slot.character.events.onInputOver.add(() => { slot.character.onHover(true); });
-      slot.character.events.onInputOut.add(() => { slot.character.onHover(false); });
-      slot.character.events.onInputDown.add(() => { this.selectCharacter(slot.character); });
     });
+
+    /* INIT BADDIES */
+    // LEVEL_MAP.enemies.forEach((char, index) => {
+    //   let slot = this.enemyMap[char.defaultLoc];
+    //   slot.character = new Character(this.game, slot.x, slot.y, Object.assign(char, {
+    //     team: 'enemy',
+    //     sprite: 'enemy',
+    //     actionHandler: this._actionHandler.bind(this),
+    //   }));
+    //
+    //   slot.character.inputEnabled = true;
+    //   slot.character.events.onInputOver.add(() => { slot.character.onHover(true); });
+    //   slot.character.events.onInputOut.add(() => { slot.character.onHover(false); });
+    //   slot.character.events.onInputDown.add(() => { this.selectCharacter(slot.character); });
+    // });
   },
 
   update: function () {
 
   },
 
-  onInputDown: function () {
-    this.game.state.start('Menu');
-  },
-
-  selectCharacter: function (character) {
+  _selectCharacter: function (character) {
     if (this.charFocus && this.charFocus !== character.loc
-        && this.playerMap[this.charFocus].character !== character) {
+        && this.playerMap[this.charFocus].character) {
       this.playerMap[this.charFocus].character.toggleSelect();
     }
-
     if (this.charFocus && this.playerMap[this.charFocus].character === character) {
       this.charFocus = null;
     } else {
       this.charFocus = character.loc;
     }
 
+    console.log("trying to clear", this.charFocus, character.name, character.loc);
     character.toggleSelect();
   },
 
   _enableMove: function (loc) {
-    const char = this.playerMap[loc].character;
     this.playerMap.forEach((val, index) => {
       val.tile.inputEnabled = true;
-      if (val.character) val.character.inputEnabled = false;
+      if (val.character) val.character.sprite.enableClick = false;
 
       val.tile.setStatus('selectable');
-      val.tile.events.onInputDown.add(() => { this._selectTile('move', loc, index); });
+      val.tile.events.onInputDown.add(() => { this._moveCharacter(loc, index); });
     });
   },
 
-  _selectTile: function (action, origin, target) {
+  _moveCharacter: function (origin, target) {
+    console.log("want to move from", origin, "to" , target);
     const originSlot = this.playerMap[origin];
     const targetSlot = this.playerMap[target];
+    const char = originSlot.character;
+    const swapChar = targetSlot.character;
 
-    if (action === 'move') {
-      const char = originSlot.character;
-      const swapChar = targetSlot.character;
-      char.changeLoc(target, targetSlot.x, targetSlot.y);
-      if (swapChar) swapChar.changeLoc(origin, originSlot.x, originSlot.y);
-
-      this.playerMap.forEach((val) => {
-        val.tile.setStatus('default');
-        if (val.character) {
-          val.character.inputEnabled = true;
-          val.character.onHover(false);
-        }
-      });
+    if (!!char && !!char.name) char.changeLoc(target, targetSlot.x, targetSlot.y);
+    this.playerMap[target].character = char;
+    this.playerMap[origin].character = null;
+    if (!!swapChar && !!swapChar.name) {
+      swapChar.changeLoc(origin, originSlot.x, originSlot.y);
+      this.playerMap[origin].character = swapChar;
     }
+
+    this.playerMap.forEach((val) => {
+      val.tile.setStatus('default');
+      val.tile.events.onInputDown.removeAll();
+      if (val.character) {
+        val.character.enableClick = true;
+        val.character.onHover(false);
+      }
+    });
+
+    this.charFocus = target;
+    console.log("changed map", this.playerMap);
+    console.log("charFocus is now", this.charFocus);
   },
 
-  _actionHandler: function (action, params) {
-    if (action === 'move') {
-      this._enableMove(params.loc);
+  _actionHandler: function (action, loc) {
+    if (action === 'select') {
+      this._selectCharacter(this.playerMap[loc].character);
+    } else if (action === 'move') {
+      this._enableMove(loc);
     }
   },
 };
