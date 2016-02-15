@@ -1,14 +1,12 @@
 'use strict';
 
 const Tile = function (game, x, y) {
-  this.actionHandler = (action) => {
-    if (!action) {
-      return;
-    }
-  };
+  this.status = 'default';
+  this.defaultState = 'grass';
 
-  this.changeFrame = (frameName) => {
-    this.frameName = frameName;
+  this.setStatus = (frameName, status) => {
+    this.frameName = frameName === 'default' ? this.defaultState : frameName;
+    this.status = status ? status : frameName;
   };
 
   Phaser.Sprite.call(this, game, x, y, 'tiles', 'grass');

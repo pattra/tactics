@@ -57,8 +57,6 @@ Game.prototype = {
 
         // player tiles
         playerTile = new Tile(this.game, j * 100, i * 100);
-        playerTile.inputEnabled = true;
-        playerTile.events.onInputDown.add((action) => { playerTile.actionHandler(action); });
         this.playerMap.push({
           tile: playerTile,
           x: j * 100,
@@ -67,7 +65,6 @@ Game.prototype = {
 
         // enemy tiles
         enemyTile = new Tile(this.game, j * 100 + mapOffset, i * 100);
-        enemyTile.inputEnabled = true;
         this.enemyMap.push({
           tile: enemyTile,
           x: j * 100,
@@ -91,9 +88,6 @@ Game.prototype = {
       slot.character.events.onInputOut.add(() => { slot.character.onHover(false); });
       slot.character.events.onInputDown.add(() => { this.selectCharacter(slot.character); });
     });
-
-    console.log(this);
-    console.log(this.moveCharacter);
   },
 
   update: function () {
@@ -122,12 +116,27 @@ Game.prototype = {
   _moveCharacter: function (loc) {
     const char = this.playerMap[loc].character;
     this.playerMap.forEach((val, index) => {
-      val.tile.displayHandler('highlight');
+      val.tile.setStatus('selectable');
+      val.tile.inputEnabled = true;
+      val.tile.events.onInputDown.add(() => { this._selectTile('move', loc, index); });
     });
   },
 
+  _selectTile: function (action, loc, target) {
+    const slot = this.playerMap[loc];
+    const targetSlot = this.playerMap[target];
+
+    if (action === 'move') {
+      const char = slot.character;
+      char.changeLoc(target, targetSlot.x, targetSlot.y);
+
+      this.playerMap.forEach((val) => {
+        val.tile.setStatus('default');
+      });
+    }
+  },
+
   _actionHandler: function (action, params) {
-    console.log('handling action', action, params);
     if (action === 'move') {
       this._moveCharacter(params.loc);
     }

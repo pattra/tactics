@@ -15,7 +15,6 @@ Preloader.prototype = {
     this.load.setPreloadSprite(this.asset);
 
     /* loading sprites */
-    // this.load.image('grass', 'assets/tile_grass.png');
     this.load.image('ally', 'assets/ally.png');
     this.load.image('enemy', 'assets/enemy.png');
 

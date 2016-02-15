@@ -27,6 +27,12 @@ const Character = function (game, x, y, properties) {
     this.detail.updateHP(this.currentHP, this.maxHP);
   };
 
+  this.changeLoc = (loc, x, y) => {
+    this.loc = loc;
+    this.x = x;
+    this.y = y;
+  };
+
   Phaser.Sprite.call(this, game, x, y, properties.sprite);
   game.add.existing(this);
 };
