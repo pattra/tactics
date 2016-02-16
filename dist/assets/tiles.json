@@ -1,6 +1,6 @@
 {"frames": {
 
-"grass":
+"attack":
 {
 	"frame": {"x":1,"y":1,"w":100,"h":100},
 	"rotated": false,
@@ -8,9 +8,17 @@
 	"spriteSourceSize": {"x":0,"y":0,"w":100,"h":100},
 	"sourceSize": {"w":100,"h":100}
 },
-"selectable":
+"grass":
 {
 	"frame": {"x":103,"y":1,"w":100,"h":100},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":100,"h":100},
+	"sourceSize": {"w":100,"h":100}
+},
+"select":
+{
+	"frame": {"x":205,"y":1,"w":100,"h":100},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":100,"h":100},
@@ -21,8 +29,8 @@
 	"version": "1.0",
 	"image": "tiles.png",
 	"format": "RGBA8888",
-	"size": {"w":204,"h":102},
+	"size": {"w":306,"h":102},
 	"scale": "1",
-	"smartupdate": "$TexturePacker:SmartUpdate:54ef335b8919653367a8b5b62c591299:ca39154baebbcec2981aa810dcd936b8:accbe1e7e294ded8391337fc1c446319$"
+	"smartupdate": "$TexturePacker:SmartUpdate:6e4a50e1c98befd34029d6cabba0e302:3c34e0ec9cfb2327da2ba56cde02c4a0:accbe1e7e294ded8391337fc1c446319$"
 }
 }

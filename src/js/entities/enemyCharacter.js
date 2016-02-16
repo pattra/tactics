@@ -1,37 +1,35 @@
 'use strict';
 
 const Preview = require('../entities/charBattlePreview');
-const Detail = require('../entities/charBattleDetail');
 
-const Character = function (game, x, y, properties) {
+const EnemyCharacter = function (game, x, y, properties) {
   /* PROPERTIES */
   this.loc = properties.loc;
-
   this.handler = properties.actionHandler;
-  this.UIHandler = (action) => {
-    this.handler(action, this.loc);
-  };
 
   this.preview = new Preview(game, x, y, properties);
-  this.detail = new Detail(game, x, y, properties, this.UIHandler);
   this.name = properties.name;
   this.maxHP = properties.maxHP;
   this.currentHP = properties.maxHP;
-  this.team = properties.team;
 
   /* FUNCTIONS */
   this.onHover = (cursorOn) => {
     this.preview.toggleDisplay(cursorOn);
   };
 
-  this.toggleSelect = () => {
-    this.detail.toggleDisplay();
-  };
+  // this.toggleSelect = () => {
+  //   this.detail.toggleDisplay();
+  // };
 
   this.changeHP = (amt) => {
     this.currentHP = this.currentHP + amt;
-    this.preview.updateHP(this.currentHP, this.maxHP);
-    this.detail.updateHP(this.currentHP, this.maxHP);
+
+    if (this.currentHP < 1) {
+      this.sprite.kill();
+      this.handler('kill', this.loc);
+    } else {
+      this.preview.updateHP(this.currentHP, this.maxHP);
+    }
   };
 
   this.changeLoc = (loc, x, y) => {
@@ -42,7 +40,6 @@ const Character = function (game, x, y, properties) {
 
   this.onClick = () => {
     this.handler('select', this.loc);
-    this.detail.toggleDisplay();
   };
 
   this.sprite = game.add.sprite(x, y, properties.sprite);
@@ -54,12 +51,12 @@ const Character = function (game, x, y, properties) {
 };
 
 // Character.prototype = Object.create(Phaser.Sprite.prototype);
-Character.prototype.constructor = Character;
+EnemyCharacter.prototype.constructor = EnemyCharacter;
 
 /**
  * Automatically called by World.update
  */
-Character.prototype.update = function () {
+EnemyCharacter.prototype.update = function () {
 };
 
-module.exports = Character;
+module.exports = EnemyCharacter;

@@ -19,7 +19,7 @@ const CharBattleDetail = function (game, x, y, properties, handler) {
 
   this.text.attack = game.add.text(0, game.world.centerY + 150, 'Attack', style, this.vitals);
   this.text.attack.inputEnabled = true;
-  this.text.attack.events.onInputDown.add(() => { this.handler('attack', { loc: properties.loc, ability: 'standard' }); });
+  this.text.attack.events.onInputDown.add(() => { this.handler('attack'); });
 
   this.toggleDisplay = () => {
     this.vitals.visible = !this.vitals.visible;
