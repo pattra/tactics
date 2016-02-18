@@ -51,6 +51,11 @@ const LEVEL_MAP = {
       maxHP: 3,
       loc: 1,
     },
+    {
+      name: 'baddie 4',
+      maxHP: 3,
+      loc: 2,
+    },
   ],
 };
 
@@ -60,11 +65,12 @@ const Game = function () {
   this.enemyMap = [];
 
   this.getEnemyTargets = {
-    melee: function (map) {
+    melee: function (origin) {
       /* [ ][ ][ ]
          [x][ ][ ]
          [ ][ ][ ] */
       const targetable = [];
+      const map = this.enemyMap;
       let index;
 
       for (let i = 0; i < MAP_SIZE; i++) {
@@ -72,6 +78,7 @@ const Game = function () {
           index = i * MAP_SIZE + j;
           if (map[index].character) {
             targetable.push(index);
+            this._clickUtil(map, origin, index, 'attack');
             break;
           }
         }
@@ -80,25 +87,50 @@ const Game = function () {
       return targetable;
     },
 
-    ranged: function (map) {
+    ranged: function (origin) {
       /* [ ][ ][ ]
          [ ][x][ ] (any)
          [ ][ ][ ] */
       const targetable = [];
+      const map = this.enemyMap;
 
       for (let i = 0; i < MAP_TOTAL_TILES; i++) {
         if (map[i].character) {
           targetable.push(i);
+          this._clickUtil(map, origin, i, 'attack');
         }
       }
 
       return targetable;
     },
 
-    reach: function () {
+    reach: function (origin) {
       /* [ ][ ][ ]
          [x][x][ ]
          [ ][ ][ ] */
+      const targetable = [];
+      const map = this.enemyMap;
+      let index;
+      let reachIndex;
+
+      for (let i = 0; i < MAP_SIZE; i++) {
+        for (let j = 0; j < MAP_SIZE; j++) {
+          index = i * MAP_SIZE + j;
+          if (map[index].character) {
+            this._clickUtil(map, origin, index, 'attack');
+
+            reachIndex = index + 1;
+            if (reachIndex % MAP_SIZE !== 0) {
+              this._tileUtil(map, reachIndex, 'affect');
+            }
+
+            targetable.push(index);
+            break;
+          }
+        }
+      }
+
+      return targetable;
     },
 
     pierce: function () {
@@ -226,32 +258,9 @@ Game.prototype = {
 
   _enableTargeting: function (origin, range) {
     console.log(range);
-    const targets = this.getEnemyTargets[range](this.enemyMap);
-    targets.forEach((loc) => {
-      let val = this.enemyMap[loc];
-      val.character.sprite.events.onInputDown.removeAll();
-      val.character.sprite.events.onInputDown.add(() => { this._targetCharacter(origin, loc); });
+    const targets = this.getEnemyTargets[range].bind(this)(origin);
 
-      val.tile.setStatus('attack');
-      val.tile.events.onInputDown.add(() => {this._targetCharacter(origin, loc); });
-    });
-  },
-
-  _targetCharacter: function (origin, target) {
-    let clearMap = this.enemyMap;
-    let actor = this.playerMap[origin].character;
-    let recip = this.enemyMap[target].character;
-
-    recip.changeHP(-1 * actor.attack);
-    this._clearMap(clearMap);
-  },
-
-  _clearMap: function (map) {
-    map.forEach((val, index) => {
-      if (val.character) val.character.sprite.events.onInputDown.removeAll();
-      val.tile.events.onInputDown.removeAll();
-      val.tile.setStatus('default');
-    });
+    console.log(targets);
   },
 
   _enableMove: function (loc) {
@@ -292,6 +301,38 @@ Game.prototype = {
     });
 
     this.charFocus = target;
+  },
+
+  _targetCharacter: function (origin, target) {
+    console.log('origin', origin, 'map', this.playerMap);
+    let clearMap = this.enemyMap;
+    let actor = this.playerMap[origin].character;
+    let recip = this.enemyMap[target].character;
+
+    recip.changeHP(-1 * actor.attack);
+    this._clearMap(clearMap);
+  },
+
+  _clearMap: function (map) {
+    map.forEach((val, index) => {
+      if (val.character) val.character.sprite.events.onInputDown.removeAll();
+      val.tile.events.onInputDown.removeAll();
+      val.tile.setStatus('default');
+    });
+  },
+
+  _clickUtil: function (map, origin, loc, tile) {
+    console.log("click util", map, origin);
+    let val = map[loc];
+    val.character.sprite.events.onInputDown.removeAll();
+    val.character.sprite.events.onInputDown.add(() => { this._targetCharacter(origin, loc); });
+
+    this._tileUtil(map, loc, tile);
+    val.tile.events.onInputDown.add(() => {this._targetCharacter(origin, loc); });
+  },
+
+  _tileUtil: function (map, loc, tile) {
+    map[loc].tile.setStatus(tile);
   },
 
   _playerActionHandler: function (action, loc, params) {

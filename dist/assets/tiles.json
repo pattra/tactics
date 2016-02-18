@@ -16,7 +16,7 @@
 	"spriteSourceSize": {"x":0,"y":0,"w":100,"h":100},
 	"sourceSize": {"w":100,"h":100}
 },
-"select":
+"affect":
 {
 	"frame": {"x":205,"y":1,"w":100,"h":100},
 	"rotated": false,
