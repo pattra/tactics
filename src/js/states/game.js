@@ -15,7 +15,7 @@ const PLAYER_FILE = {
       isPlayer: true,
       loc: 3,
       attack: 1,
-      range: 'pierce',
+      range: 'all',
     },
     {
       name: 'Fenris',
@@ -199,7 +199,7 @@ const Game = function () {
          [x][ ][ ] */
       const map = this.enemyMap;
       let index;
-      let neighbors = [];
+      let neighbors;
 
       for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
@@ -218,10 +218,24 @@ const Game = function () {
       }
     },
 
-    all: function () {
+    all: function (origin) {
       /* [x][x][x]
          [x][x][x]
          [x][x][x] */
+      const map = this.enemyMap;
+      let neighbors;
+
+      for (let i = 0; i < MAP_TOTAL_TILES; i++) {
+        if (map[i].character) {
+          neighbors = [];
+
+          for (let j = 0; j < MAP_TOTAL_TILES; j++) {
+            if (j !== i) neighbors.push(j);
+          }
+
+          this._setUpTarget(map, origin, i, neighbors);
+        }
+      }
     },
   };
 
