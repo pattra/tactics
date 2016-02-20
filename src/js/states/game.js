@@ -22,7 +22,7 @@ const PLAYER_FILE = {
       maxHP: 15,
       loc: 5,
       attack: 3,
-      range: 'melee',
+      range: 'swing',
     },
     {
       name: 'Corrin',
@@ -55,6 +55,11 @@ const LEVEL_MAP = {
       name: 'baddie 4',
       maxHP: 3,
       loc: 2,
+    },
+    {
+      name: 'baddie 5',
+      maxHP: 3,
+      loc: 3,
     },
   ],
 };
@@ -154,12 +159,63 @@ const Game = function () {
       /* [ ][x][ ]
          [x][x][x]
          [ ][x][ ] */
+      const map = this.enemyMap;
+      let index;
+      let neighbors = [];
     },
 
-    swing: function () {
+    swing: function (origin) {
+      /* [O][ ][x]
+         [x][x][O]
+         [ ][O][x] */
+      const map = this.enemyMap;
+      let index;
+      let neighbors = [];
+      let topIndex;
+      let botIndex;
+
+      for (let i = 0; i < MAP_SIZE; i++) {
+        for (let j = 0; j < MAP_SIZE; j++) {
+          neighbors = [];
+          index = i * MAP_SIZE + j;
+
+          if (map[index].character) {
+            topIndex = index - MAP_SIZE;
+            botIndex = index + MAP_SIZE;
+
+            if (topIndex > -1) neighbors.push(index - MAP_SIZE);
+            if (botIndex < MAP_TOTAL_TILES) neighbors.push(index + MAP_SIZE);
+
+            this._setUpTarget(map, origin, index, neighbors);
+            break;
+          }
+        }
+      }
+    },
+
+    impact: function (origin) {
       /* [x][ ][ ]
          [x][ ][ ]
          [x][ ][ ] */
+      const map = this.enemyMap;
+      let index;
+      let neighbors = [];
+
+      for (let i = 0; i < MAP_SIZE; i++) {
+        for (let j = 0; j < MAP_SIZE; j++) {
+          index = i * MAP_SIZE + j;
+          if (map[index].character) {
+            neighbors = [];
+
+            for (let k = j; k < (j + 1 + (MAP_SIZE * (MAP_SIZE - 1))); k += 3) {
+              if (k !== index) neighbors.push(k);
+            }
+
+            this._setUpTarget(map, origin, index, neighbors);
+            break;
+          }
+        }
+      }
     },
 
     all: function () {
