@@ -6,7 +6,7 @@ const Tile = function (game, x, y) {
 
   this.setStatus = (frameName, status) => {
     this.frameName = frameName === 'default' ? this.defaultState : frameName;
-    this.status = status ? status : frameName;
+    this.status = status ? status : frameName; // doesn't currently do anything
   };
 
   Phaser.Sprite.call(this, game, x, y, 'tiles', 'grass');

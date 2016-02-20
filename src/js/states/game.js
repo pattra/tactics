@@ -15,7 +15,7 @@ const PLAYER_FILE = {
       isPlayer: true,
       loc: 3,
       attack: 1,
-      range: 'ranged',
+      range: 'pierce',
     },
     {
       name: 'Fenris',
@@ -78,7 +78,7 @@ const Game = function () {
           index = i * MAP_SIZE + j;
           if (map[index].character) {
             targetable.push(index);
-            this._clickUtil(map, origin, index, 'attack');
+            this._setUpTarget(map, origin, index, []);
             break;
           }
         }
@@ -91,24 +91,20 @@ const Game = function () {
       /* [ ][ ][ ]
          [ ][x][ ] (any)
          [ ][ ][ ] */
-      const targetable = [];
       const map = this.enemyMap;
 
       for (let i = 0; i < MAP_TOTAL_TILES; i++) {
         if (map[i].character) {
           targetable.push(i);
-          this._clickUtil(map, origin, i, 'attack');
+          this._setUpTarget(map, origin, i, []);
         }
       }
-
-      return targetable;
     },
 
     reach: function (origin) {
       /* [ ][ ][ ]
          [x][x][ ]
          [ ][ ][ ] */
-      const targetable = [];
       const map = this.enemyMap;
       let index;
       let reachIndex;
@@ -117,11 +113,11 @@ const Game = function () {
         for (let j = 0; j < MAP_SIZE; j++) {
           index = i * MAP_SIZE + j;
           if (map[index].character) {
-            this._clickUtil(map, origin, index, 'attack');
-
             reachIndex = index + 1;
             if (reachIndex % MAP_SIZE !== 0) {
-              this._tileUtil(map, reachIndex, 'affect');
+              this._setUpTarget(map, origin, index, [reachIndex]);
+            } else {
+              this._setUpTarget(map, origin, index, []);
             }
 
             targetable.push(index);
@@ -129,14 +125,29 @@ const Game = function () {
           }
         }
       }
-
-      return targetable;
     },
 
-    pierce: function () {
+    pierce: function (origin) {
       /* [ ][ ][ ]
          [x][x][x]
          [ ][ ][ ] */
+      const map = this.enemyMap;
+      let index;
+      let neighbors = [];
+
+      for (let i = 0; i < MAP_SIZE; i++) {
+        for (let j = 0; j < MAP_SIZE; j++) {
+          index = i * MAP_SIZE + j;
+          if (map[index].character) {
+            neighbors = [];
+            for (let k = i * MAP_SIZE; k < (i + 1) * MAP_SIZE; k++) {
+              if (k !== index) neighbors.push(k);
+            }
+
+            this._setUpTarget(map, origin, index, neighbors);
+          }
+        }
+      }
     },
 
     spread: function () {
@@ -257,10 +268,7 @@ Game.prototype = {
   },
 
   _enableTargeting: function (origin, range) {
-    console.log(range);
-    const targets = this.getEnemyTargets[range].bind(this)(origin);
-
-    console.log(targets);
+    this.getEnemyTargets[range].bind(this)(origin);
   },
 
   _enableMove: function (loc) {
@@ -321,18 +329,45 @@ Game.prototype = {
     });
   },
 
-  _clickUtil: function (map, origin, loc, tile) {
-    console.log("click util", map, origin);
+  _setUpTarget: function (map, origin, loc, neighbors) {
     let val = map[loc];
+
     val.character.sprite.events.onInputDown.removeAll();
     val.character.sprite.events.onInputDown.add(() => { this._targetCharacter(origin, loc); });
 
-    this._tileUtil(map, loc, tile);
-    val.tile.events.onInputDown.add(() => {this._targetCharacter(origin, loc); });
+    val.tile.inputEnabled = true;
+    val.tile.events.onInputDown.add(() => { this._targetCharacter(origin, loc); });
+    this._setTileHover(map, val.tile, val.character.sprite, 'attack', neighbors);
   },
 
-  _tileUtil: function (map, loc, tile) {
-    map[loc].tile.setStatus(tile);
+  _setTileHover: function (map, tile, char, frameName, neighbors) {
+    tile.events.onInputOver.add(() => {
+      tile.setStatus(frameName);
+      neighbors.forEach((n) => {
+        map[n].tile.setStatus('affect');
+      });
+    });
+
+    tile.events.onInputOut.add(() => {
+      tile.setStatus('default');
+      neighbors.forEach((n) => {
+        map[n].tile.setStatus('default');
+      });
+    });
+
+    char.events.onInputOver.add(() => {
+      tile.setStatus(frameName);
+      neighbors.forEach((n) => {
+        map[n].tile.setStatus('affect');
+      });
+    });
+
+    char.events.onInputOut.add(() => {
+      tile.setStatus('default');
+      neighbors.forEach((n) => {
+        map[n].tile.setStatus('default');
+      });
+    });
   },
 
   _playerActionHandler: function (action, loc, params) {
