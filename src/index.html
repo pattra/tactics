@@ -18,6 +18,13 @@
   <script src="js/main.min.js"></script>
   <!-- /build -->
 
+  <script>
+    var el = document.getElementById('tactics-game');
+
+    el.addEventListener('contextmenu', function (evt) {
+      evt.preventDefault();
+    }, false);
+  </script>
+
 </body>
 </html>
-

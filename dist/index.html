@@ -14,6 +14,13 @@
 
   <script src="main.min.js"></script>
 
+  <script>
+    var el = document.getElementById('tactics-game');
+
+    el.addEventListener('contextmenu', function (evt) {
+      evt.preventDefault();
+    }, false);
+  </script>
+
 </body>
 </html>
-

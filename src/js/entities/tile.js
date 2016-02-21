@@ -1,6 +1,9 @@
 'use strict';
 
 const Tile = function (game, x, y) {
+  Phaser.Sprite.call(this, game, x, y, 'tiles', 'grass');
+
+  this.inputEnabled = true;
   this.status = 'default';
   this.defaultState = 'grass';
 
@@ -8,8 +11,6 @@ const Tile = function (game, x, y) {
     this.frameName = frameName === 'default' ? this.defaultState : frameName;
     this.status = status ? status : frameName; // doesn't currently do anything
   };
-
-  Phaser.Sprite.call(this, game, x, y, 'tiles', 'grass');
 
   game.add.existing(this);
 };

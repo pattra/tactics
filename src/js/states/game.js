@@ -15,7 +15,7 @@ const PLAYER_FILE = {
       isPlayer: true,
       loc: 3,
       attack: 1,
-      range: 'all',
+      range: 'spread',
     },
     {
       name: 'Fenris',
@@ -61,6 +61,11 @@ const LEVEL_MAP = {
       maxHP: 3,
       loc: 3,
     },
+    {
+      name: 'baddie 6',
+      maxHP: 3,
+      loc: 4,
+    },
   ],
 };
 
@@ -68,13 +73,13 @@ const Game = function () {
   this.charFocus = null;
   this.playerMap = [];
   this.enemyMap = [];
+  this.mapClear = true;
 
   this.getEnemyTargets = {
     melee: function (origin) {
       /* [ ][ ][ ]
          [x][ ][ ]
          [ ][ ][ ] */
-      const targetable = [];
       const map = this.enemyMap;
       let index;
 
@@ -82,14 +87,11 @@ const Game = function () {
         for (let j = 0; j < MAP_SIZE; j++) {
           index = i * MAP_SIZE + j;
           if (map[index].character) {
-            targetable.push(index);
             this._setUpTarget(map, origin, index, []);
             break;
           }
         }
       }
-
-      return targetable;
     },
 
     ranged: function (origin) {
@@ -100,7 +102,6 @@ const Game = function () {
 
       for (let i = 0; i < MAP_TOTAL_TILES; i++) {
         if (map[i].character) {
-          targetable.push(i);
           this._setUpTarget(map, origin, i, []);
         }
       }
@@ -125,7 +126,6 @@ const Game = function () {
               this._setUpTarget(map, origin, index, []);
             }
 
-            targetable.push(index);
             break;
           }
         }
@@ -138,7 +138,7 @@ const Game = function () {
          [ ][ ][ ] */
       const map = this.enemyMap;
       let index;
-      let neighbors = [];
+      let neighbors;
 
       for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
@@ -155,13 +155,32 @@ const Game = function () {
       }
     },
 
-    spread: function () {
+    spread: function (origin) {
       /* [ ][x][ ]
          [x][x][x]
          [ ][x][ ] */
       const map = this.enemyMap;
       let index;
-      let neighbors = [];
+      let neighbors;
+
+      for (let i = 0; i < MAP_SIZE; i++) {
+        for (let j = 0; j < MAP_SIZE; j++) {
+          index = i * MAP_SIZE + j;
+          if (map[index].character) {
+            neighbors = [];
+
+            // horizontal checks
+            if ((index + 1) % 3 > index % 3 && (index + 1) < MAP_TOTAL_TILES) neighbors.push(index + 1);
+            if ((index - 1) % 3 < index % 3 && (index - 1) > -1) neighbors.push(index - 1);
+
+            // vertical checks
+            if ((index + 3) < MAP_TOTAL_TILES) neighbors.push(index + 3);
+            if ((index - 3) > -1) neighbors.push(index - 3);
+
+            this._setUpTarget(map, origin, index, neighbors);
+          }
+        }
+      }
     },
 
     swing: function (origin) {
@@ -170,16 +189,16 @@ const Game = function () {
          [ ][O][x] */
       const map = this.enemyMap;
       let index;
-      let neighbors = [];
+      let neighbors;
       let topIndex;
       let botIndex;
 
       for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
-          neighbors = [];
           index = i * MAP_SIZE + j;
 
           if (map[index].character) {
+            neighbors = [];
             topIndex = index - MAP_SIZE;
             botIndex = index + MAP_SIZE;
 
@@ -260,6 +279,22 @@ const Game = function () {
       return targetable;
     },
   };
+
+  this._clearMap = (map) => {
+    this.mapClear = true;
+    map.forEach((val, index) => {
+      if (val.character) {
+        val.character.sprite.events.onInputDown.removeAll();
+        val.character.sprite.events.onInputOver.removeAll();
+        val.character.sprite.events.onInputOver.add(val.character.onHover);
+      }
+
+      val.tile.events.onInputDown.removeAll();
+      val.tile.events.onInputOver.removeAll();
+      val.tile.events.onInputOut.removeAll();
+      val.tile.setStatus('default');
+    });
+  };
 };
 
 module.exports = Game;
@@ -308,6 +343,9 @@ Game.prototype = {
         sprite: 'ally',
         actionHandler: this._playerActionHandler.bind(this),
       }));
+
+      slot.tile.events.onInputOver.add(() => slot.character.onHover(true));
+      slot.tile.events.onInputOut.add(() => slot.character.onHover(false));
     });
 
     /* INIT BADDIES */
@@ -318,7 +356,20 @@ Game.prototype = {
         sprite: 'enemy',
         actionHandler: this._enemyActionHandler.bind(this),
       }));
+
+      slot.tile.events.onInputOver.add(() => slot.character.onHover(true));
+      slot.tile.events.onInputOut.add(() => slot.character.onHover(false));
     });
+
+    this.input.mouse.mouseDownCallback = (e) => {
+      if (e.button === Phaser.Mouse.RIGHT_BUTTON) {
+        e.preventDefault();
+
+        if (!this.mapClear) {
+          this._clearMap(this.enemyMap);
+        }
+      }
+    };
   },
 
   update: function () {
@@ -338,10 +389,12 @@ Game.prototype = {
   },
 
   _enableTargeting: function (origin, range) {
+    this.mapClear = false;
     this.getEnemyTargets[range].bind(this)(origin);
   },
 
   _enableMove: function (loc) {
+    this.mapClear = false;
     this.playerMap.forEach((val, index) => {
       val.tile.inputEnabled = true;
       if (val.character) {
@@ -349,7 +402,7 @@ Game.prototype = {
         val.character.sprite.events.onInputDown.add(() => { this._moveCharacter(loc, index); });
       }
 
-      val.tile.setStatus('select');
+      val.tile.setStatus('affect');
       val.tile.events.onInputDown.add(() => { this._moveCharacter(loc, index); });
     });
   },
@@ -371,42 +424,43 @@ Game.prototype = {
     this.playerMap.forEach((val) => {
       val.tile.setStatus('default');
       val.tile.events.onInputDown.removeAll();
+      val.tile.events.onInputOver.removeAll();
+      val.tile.events.onInputOut.removeAll();
+
       if (val.character) {
         val.character.sprite.events.onInputDown.removeAll();
         val.character.sprite.events.onInputDown.add(val.character.onClick);
         val.character.onHover(false);
+
+        val.tile.events.onInputOver.add(() => val.character.onHover(true));
+        val.tile.events.onInputOut.add(() => val.character.onHover(false));
       }
     });
 
     this.charFocus = target;
   },
 
-  _targetCharacter: function (origin, target) {
+  _targetCharacter: function (origin, target, neighbors) {
     console.log('origin', origin, 'map', this.playerMap);
-    let clearMap = this.enemyMap;
+    let recipMap = this.enemyMap;
     let actor = this.playerMap[origin].character;
     let recip = this.enemyMap[target].character;
 
     recip.changeHP(-1 * actor.attack);
-    this._clearMap(clearMap);
-  },
-
-  _clearMap: function (map) {
-    map.forEach((val, index) => {
-      if (val.character) val.character.sprite.events.onInputDown.removeAll();
-      val.tile.events.onInputDown.removeAll();
-      val.tile.setStatus('default');
+    neighbors.forEach(n => {
+      if (recipMap[n].character) recipMap[n].character.changeHP(-1 * actor.attack);
     });
+    this._clearMap(recipMap);
   },
 
   _setUpTarget: function (map, origin, loc, neighbors) {
     let val = map[loc];
 
     val.character.sprite.events.onInputDown.removeAll();
-    val.character.sprite.events.onInputDown.add(() => { this._targetCharacter(origin, loc); });
+    val.character.sprite.events.onInputDown.add(() => { this._targetCharacter(origin, loc, neighbors); });
 
     val.tile.inputEnabled = true;
-    val.tile.events.onInputDown.add(() => { this._targetCharacter(origin, loc); });
+    val.tile.events.onInputDown.add(() => { this._targetCharacter(origin, loc, neighbors); });
     this._setTileHover(map, val.tile, val.character.sprite, 'attack', neighbors);
   },
 
