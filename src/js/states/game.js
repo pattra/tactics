@@ -1,4 +1,5 @@
 'use strict';
+const _ = require('lodash');
 
 const PlayerCharacter = require('../entities/playerCharacter');
 const EnemyCharacter = require('../entities/enemyCharacter');
@@ -11,24 +12,27 @@ const PLAYER_FILE = {
   party: [
     {
       name: 'Sobel',
-      maxHP: 10,
+      hp: 10,
       isPlayer: true,
       loc: 3,
       attack: 1,
+      speed: 10,
       range: 'spread',
     },
     {
       name: 'Fenris',
-      maxHP: 15,
+      hp: 15,
       loc: 5,
       attack: 3,
+      speed: 4,
       range: 'swing',
     },
     {
       name: 'Corrin',
-      maxHP: 15,
+      hp: 15,
       loc: 2,
       attack: 2,
+      speed: 6,
       range: 'reach',
     },
   ],
@@ -38,33 +42,39 @@ const LEVEL_MAP = {
   enemies: [
     {
       name: 'baddie 1',
-      maxHP: 3,
+      hp: 3,
       loc: 0,
+      speed: 1,
     },
     {
       name: 'baddie 2',
-      maxHP: 5,
+      hp: 5,
       loc: 7,
+      speed: 2,
     },
     {
       name: 'baddie 3',
-      maxHP: 3,
+      hp: 3,
       loc: 1,
+      speed: 3,
     },
     {
       name: 'baddie 4',
-      maxHP: 3,
+      hp: 3,
       loc: 2,
+      speed: 3,
     },
     {
       name: 'baddie 5',
-      maxHP: 3,
+      hp: 3,
       loc: 3,
+      speed: 1,
     },
     {
       name: 'baddie 6',
-      maxHP: 3,
+      hp: 3,
       loc: 4,
+      speed: 2,
     },
   ],
 };
@@ -74,6 +84,10 @@ const Game = function () {
   this.playerMap = [];
   this.enemyMap = [];
   this.mapClear = true;
+
+  this.currentTurn = 0;
+  this.turnOrder = {};
+  this.needReorder = false;
 
   this.getEnemyTargets = {
     melee: function (origin) {
@@ -302,7 +316,6 @@ module.exports = Game;
 Game.prototype = {
 
   init: function (param) {
-    // console.log(param);
   },
 
   create: function () {
@@ -361,6 +374,18 @@ Game.prototype = {
       slot.tile.events.onInputOut.add(() => slot.character.onHover(false));
     });
 
+    /* INIT TURN ORDER */
+    let combinedMap = this.playerMap.concat(this.enemyMap);
+    this.turnOrder = _.chain(combinedMap)
+                      .filter(tile => { return tile.character; })
+                      .map('character')
+                      .sortBy(c => { return c.baseStats.speed * -1; })
+                      .toArray()
+                      .value();
+    console.log(this.turnOrder);
+    this.turnOrder[0].toggleDisplay();
+
+    /* INIT CONTROLS */
     this.input.mouse.mouseDownCallback = (e) => {
       if (e.button === Phaser.Mouse.RIGHT_BUTTON) {
         e.preventDefault();
@@ -375,18 +400,18 @@ Game.prototype = {
   update: function () {
   },
 
-  _selectCharacter: function (character) {
-    if (this.charFocus && this.charFocus !== character.loc
-        && this.playerMap[this.charFocus].character) {
-      this.playerMap[this.charFocus].character.toggleSelect();
-    }
-
-    if (this.charFocus && this.playerMap[this.charFocus].character === character) {
-      this.charFocus = null;
-    } else {
-      this.charFocus = character.loc;
-    }
-  },
+  // _selectCharacter: function (character) {
+  //   if (this.charFocus && this.charFocus !== character.loc
+  //       && this.playerMap[this.charFocus].character) {
+  //     this.playerMap[this.charFocus].character.toggleSelect();
+  //   }
+  //
+  //   if (this.charFocus && this.playerMap[this.charFocus].character === character) {
+  //     this.charFocus = null;
+  //   } else {
+  //     this.charFocus = character.loc;
+  //   }
+  // },
 
   _enableTargeting: function (origin, range) {
     this.mapClear = false;
@@ -429,7 +454,7 @@ Game.prototype = {
 
       if (val.character) {
         val.character.sprite.events.onInputDown.removeAll();
-        val.character.sprite.events.onInputDown.add(val.character.onClick);
+        // val.character.sprite.events.onInputDown.add(val.character.onClick);
         val.character.onHover(false);
 
         val.tile.events.onInputOver.add(() => val.character.onHover(true));
@@ -437,20 +462,21 @@ Game.prototype = {
       }
     });
 
-    this.charFocus = target;
+    // this.charFocus = target;
+    this._manageTurn();
   },
 
   _targetCharacter: function (origin, target, neighbors) {
-    console.log('origin', origin, 'map', this.playerMap);
     let recipMap = this.enemyMap;
     let actor = this.playerMap[origin].character;
     let recip = this.enemyMap[target].character;
 
-    recip.changeHP(-1 * actor.attack);
+    recip.changeHP(-1 * actor.currentStats.attack);
     neighbors.forEach(n => {
-      if (recipMap[n].character) recipMap[n].character.changeHP(-1 * actor.attack);
+      if (recipMap[n].character) recipMap[n].character.changeHP(-1 * actor.currentStats.attack);
     });
     this._clearMap(recipMap);
+    this._manageTurn();
   },
 
   _setUpTarget: function (map, origin, loc, neighbors) {
@@ -496,11 +522,11 @@ Game.prototype = {
 
   _playerActionHandler: function (action, loc, params) {
     if (action === 'select') {
+      // TODO: currently not being used (the select action)
       this._selectCharacter(this.playerMap[loc].character);
     } else if (action === 'move') {
       this._enableMove(loc);
     } else if (action === 'attack') {
-      console.log(action, loc, params);
       this._enableTargeting(loc, params.range);
     }
   },
@@ -509,6 +535,17 @@ Game.prototype = {
     if (action === 'kill') {
       this._killCharacter(this.enemyMap, loc);
     }
+  },
+
+  _manageTurn: function () {
+    this.turnOrder[this.currentTurn].toggleDisplay();
+
+    this.currentTurn += 1;
+    if (this.currentTurn >= this.turnOrder.length) {
+      this.currentTurn = 0;
+    }
+
+    this.turnOrder[this.currentTurn].toggleDisplay();
   },
 
   _killCharacter: function (map, loc) {

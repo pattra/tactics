@@ -10,7 +10,7 @@ const CharBattleDetail = function (game, x, y, properties, handler) {
 
   /* full detail panel */
   this.text.name = game.add.text(0, game.world.centerY, properties.name, style, this.vitals);
-  this.text.hp = game.add.text(0, game.world.centerY + 50, properties.maxHP + '/' + properties.maxHP, style, this.vitals);
+  this.text.hp = game.add.text(0, game.world.centerY + 50, properties.hp + '/' + properties.hp, style, this.vitals);
 
   /* actions */
   this.text.move = game.add.text(0, game.world.centerY + 100, 'Move Character', style, this.vitals);

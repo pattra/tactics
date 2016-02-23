@@ -4,31 +4,43 @@ const Preview = require('../entities/charBattlePreview');
 
 const EnemyCharacter = function (game, x, y, properties) {
   /* PROPERTIES */
+  console.log(properties);
   this.loc = properties.loc;
   this.handler = properties.actionHandler;
 
   this.preview = new Preview(game, x, y, properties);
   this.name = properties.name;
-  this.maxHP = properties.maxHP;
-  this.currentHP = properties.maxHP;
+  this.baseStats = {
+    hp: properties.hp,
+    speed: properties.speed,
+  };
+  this.currentStats = {
+    hp: properties.hp,
+    speed: properties.speed,
+  };
 
   /* FUNCTIONS */
   this.onHover = (cursorOn) => {
     this.preview.toggleDisplay(cursorOn);
   };
 
-  // this.toggleSelect = () => {
-  //   this.detail.toggleDisplay();
-  // };
+  this.toggleDisplay = () => {
+    console.log('uh if i had a display itd be here lol');
+  };
 
   this.changeHP = (amt) => {
-    this.currentHP = this.currentHP + amt;
+    this.currentStats.hp = this.currentStats.hp + amt;
 
-    if (this.currentHP < 1) {
+    if (this.currentStats.hp < 1) {
       this.sprite.kill();
       this.handler('kill', this.loc);
+      return;
     } else {
-      this.preview.updateHP(this.currentHP, this.maxHP);
+      if (this.currentStats.hp > this.baseStats.hp) {
+        this.currentStats.hp = this.baseStats.hp;
+      }
+
+      this.preview.updateHP(this.currentStats.hp, this.baseStats.hp);
     }
   };
 
@@ -47,7 +59,7 @@ const EnemyCharacter = function (game, x, y, properties) {
   this.sprite.inputEnabled = true;
   this.sprite.events.onInputOver.add(() => { this.onHover(true); });
   this.sprite.events.onInputOut.add(() => { this.onHover(false); });
-  this.sprite.events.onInputDown.add(this.onClick);
+  // this.sprite.events.onInputDown.add(this.onClick);
 };
 
 // Character.prototype = Object.create(Phaser.Sprite.prototype);
