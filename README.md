@@ -3,9 +3,9 @@
 baby turn-based strategy game.
 
 for craziness:
-`npm install`
-`bower install`
-`npm start`
+```npm install
+bower install
+npm start```
 
 ### Issue Tracking ###
 
