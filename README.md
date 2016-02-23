@@ -2,7 +2,10 @@
 
 baby turn-based strategy game.
 
-`npm start` for craziness
+for craziness:
+`npm install`
+`bower install`
+`npm start`
 
 ### Issue Tracking ###
 
