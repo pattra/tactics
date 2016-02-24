@@ -24,8 +24,13 @@ const EnemyCharacter = function (game, x, y, properties) {
     this.preview.toggleDisplay(cursorOn);
   };
 
-  this.toggleDisplay = () => {
-    console.log('uh if i had a display itd be here lol');
+  this.startTurn = () => {
+    console.log('beep bop');
+    this.getTargets();
+  };
+
+  this.getTargets = () => {
+    this.handler('targetPlayer', this.loc);
   };
 
   this.changeHP = (amt) => {
@@ -59,6 +64,7 @@ const EnemyCharacter = function (game, x, y, properties) {
   this.sprite.inputEnabled = true;
   this.sprite.events.onInputOver.add(() => { this.onHover(true); });
   this.sprite.events.onInputOut.add(() => { this.onHover(false); });
+
   // this.sprite.events.onInputDown.add(this.onClick);
 };
 

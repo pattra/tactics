@@ -14,10 +14,10 @@ const PLAYER_FILE = {
       name: 'Sobel',
       hp: 10,
       isPlayer: true,
-      loc: 3,
+      loc: 1,
       attack: 1,
-      speed: 10,
-      range: 'spread',
+      speed: 12,
+      range: 'pierce',
     },
     {
       name: 'Fenris',
@@ -44,7 +44,8 @@ const LEVEL_MAP = {
       name: 'baddie 1',
       hp: 3,
       loc: 0,
-      speed: 1,
+      speed: 15,
+      range: 'pierce',
     },
     {
       name: 'baddie 2',
@@ -89,22 +90,250 @@ const Game = function () {
   this.turnOrder = {};
   this.needReorder = false;
 
+  // TODO: probably want to consolidate this with getPlayerTargets at some point,
+  // the code is pretty repetitive
   this.getEnemyTargets = {
-    melee: function (origin) {
-      /* [ ][ ][ ]
-         [x][ ][ ]
-         [ ][ ][ ] */
-      const map = this.enemyMap;
+    melee: function (origin, targetSide) {
+      const targetable = [];
       let index;
+
+      for (let i = MAP_SIZE; i > 0; i--) {
+        for (let j = 0; j < MAP_SIZE; j++) {
+          index = i * MAP_SIZE - j - 1;
+          if (this.playerMap[index].character) {
+            targetable.push({ target: this.playerMap[index].character, neighbors: [] });
+            break;
+          }
+        }
+      }
+
+      return targetable;
+    },
+
+    ranged: function (origin) {
+      /* [ ][ ][ ]
+         [ ][x][ ] (any)
+         [ ][ ][ ] */
+      const targetable = [];
+      const map = this.playerMap;
+
+      for (let i = 0; i < MAP_TOTAL_TILES; i++) {
+        if (map[i].character) {
+          targetable.push({ target: map[i].character, neighbors: [] });
+        }
+      }
+
+      return targetable;
+    },
+
+    reach: function (origin) {
+      /* [ ][ ][ ]
+         [x][x][ ]
+         [ ][ ][ ] */
+      const targetable = [];
+      const map = this.playerMap;
+      let index;
+      let reachIndex;
+      let neighbors;
+
+      for (let i = MAP_SIZE; i > 0; i--) {
+        for (let j = 0; j < MAP_SIZE; j++) {
+          index = i * MAP_SIZE - j - 1;
+          if (map[index].character) {
+            neighbors = [];
+            reachIndex = index - 1;
+
+            if (reachIndex % MAP_SIZE !== (MAP_SIZE - 1) && map[reachIndex].character) {
+              neighbors.push(map[reachIndex].character);
+            }
+
+            targetable.push({ target: map[index].character, neighbors });
+
+            break;
+          }
+        }
+      }
+
+      return targetable;
+    },
+
+    pierce: function (origin) {
+      /* [ ][ ][ ]
+         [x][x][x]
+         [ ][ ][ ] */
+      const targetable = [];
+      const map = this.playerMap;
+      let index;
+      let neighbors;
+
+      for (let i = MAP_SIZE; i > 0; i--) {
+        for (let j = 0; j < MAP_SIZE; j++) {
+          index = i * MAP_SIZE - j - 1;
+          if (map[index].character) {
+            neighbors = [];
+            for (let k = i - 1; k < i * MAP_SIZE; k++) {
+              if (k !== index && map[k].character) {
+                neighbors.push(map[k].character);
+              }
+            }
+
+            targetable.push({ target: map[index].character, neighbors });
+            break;
+          }
+        }
+      }
+
+      return targetable;
+    },
+
+    spread: function (origin) {
+      /* [ ][x][ ]
+         [x][x][x]
+         [ ][x][ ] */
+      const targetable = [];
+      const map = this.playerMap;
+      let index;
+      let neighbors;
+
+      for (let i = MAP_SIZE; i > 0; i--) {
+        for (let j = 0; j < MAP_SIZE; j++) {
+          index = i * MAP_SIZE - j - 1;
+          if (map[index].character) {
+            neighbors = [];
+
+            // horizontal checks
+            if ((index + 1) % 3 > index % 3
+                && (index + 1) < MAP_TOTAL_TILES
+                && map[index + 1].character) neighbors.push(map[index + 1].character);
+            if ((index - 1) % 3 < index % 3
+                && (index - 1) > -1
+                && map[index - 1].character) neighbors.push(map[index - 1].character);
+
+            // vertical checks
+            if ((index + 3) < MAP_TOTAL_TILES) neighbors.push(map[index + 3].character);
+            if ((index - 3) > -1) neighbors.push([index - 3].character);
+
+            targetable.push({ target: map[index].character, neighbors });
+          }
+        }
+      }
+
+      return targetable;
+    },
+
+    swing: function (origin) {
+      /* [O][ ][x]
+         [x][x][O]
+         [ ][O][x] */
+      const map = this.playerMap;
+      const targetable = [];
+      let index;
+      let neighbors;
+      let topIndex;
+      let botIndex;
+
+      for (let i = MAP_SIZE; i > 0; i--) {
+        for (let j = 0; j < MAP_SIZE; j++) {
+          index = i * MAP_SIZE - j - 1;
+
+          if (map[index].character) {
+            neighbors = [];
+            topIndex = index - MAP_SIZE;
+            botIndex = index + MAP_SIZE;
+
+            if (topIndex > -1 && map[topIndex].character) neighbors.push(map[topIndex].character);
+            if (botIndex < MAP_TOTAL_TILES && map[botIndex].character) neighbors.push(map[botIndex].character);
+
+            targetable.push({ target: map[index].character, neighbors });
+            break;
+          }
+        }
+      }
+
+      return targetable;
+    },
+
+    impact: function (origin) {
+      /* [x][ ][ ]
+         [x][ ][ ]
+         [x][ ][ ] */
+      const map = this.playermap;
+      const targetable = [];
+      let index;
+      let neighbors;
 
       for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
           index = i * MAP_SIZE + j;
           if (map[index].character) {
-            this._setUpTarget(map, origin, index, []);
+            neighbors = [];
+
+            for (let k = j; k < (j + 1 + (MAP_SIZE * (MAP_SIZE - 1))); k += 3) {
+              if (k !== index) neighbors.push(map[k].character);
+            }
+
+            targetable.push({ target: map[index].character, neighbors });
             break;
           }
         }
+      }
+
+      return targetable;
+    },
+
+    all: function (origin) {
+      /* [x][x][x]
+         [x][x][x]
+         [x][x][x] */
+      const map = this.playerMap;
+      const targetable = [];
+      let neighbors;
+
+      for (let i = 0; i < MAP_TOTAL_TILES; i++) {
+        if (map[i].character) {
+          neighbors = [];
+
+          for (let j = 0; j < MAP_TOTAL_TILES; j++) {
+            if (j !== i) neighbors.push(j);
+          }
+
+          targetable.push({ target: map[index].character, neighbors });
+        }
+      }
+
+      return targetable;
+    },
+  };
+
+  this.getPlayerTargets = {
+    melee: function (origin, targetSide) {
+      /* [ ][ ][ ]
+         [x][ ][ ]
+         [ ][ ][ ] */
+      let index;
+
+      if (targetSide === 'player') {
+        for (let i = MAP_SIZE; i > 0; i--) {
+          for (let j = 0; j < MAP_SIZE; j++) {
+            index = i * MAP_SIZE - j - 1;
+            if (this.playerMap[index].character) {
+              this._setUpTarget(this.enemyMap, origin, index, []);
+              break;
+            }
+          }
+        }
+      } else if (targetSide === 'enemy') {
+        for (let i = 0; i < MAP_SIZE; i++) {
+          for (let j = 0; j < MAP_SIZE; j++) {
+            index = i * MAP_SIZE + j;
+            if (this.enemyMap[index].character) {
+              this._setUpTarget(this.enemyMap, origin, index, []);
+              break;
+            }
+          }
+        }
+      } else {
+        console.log('um what r u going for kid');
       }
     },
 
@@ -164,6 +393,7 @@ const Game = function () {
             }
 
             this._setUpTarget(map, origin, index, neighbors);
+            break;
           }
         }
       }
@@ -272,28 +502,6 @@ const Game = function () {
     },
   };
 
-  this.getPlayerTargets = {
-    melee: function (map) {
-      /* [ ][ ][ ]
-         [x][ ][ ]
-         [ ][ ][ ] */
-      let index;
-      let targetable = [];
-
-      for (let i = MAP_SIZE - 1; i >= 0; i--) {
-        for (let j = MAP_SIZE - 1; j >= 0; j--) {
-          index = i * MAP_SIZE + j;
-          if (map[index].character) {
-            targetable.push(index);
-            break;
-          }
-        }
-      }
-
-      return targetable;
-    },
-  };
-
   this._clearMap = (map) => {
     this.mapClear = true;
     map.forEach((val, index) => {
@@ -333,16 +541,16 @@ Game.prototype = {
         playerTile = new Tile(this.game, j * 100, i * 100);
         this.playerMap.push({
           tile: playerTile,
-          x: j * 100,
-          y: i * 100,
+          x: playerTile.x,
+          y: playerTile.y,
         });
 
         // enemy tiles
         enemyTile = new Tile(this.game, j * 100 + mapOffset, i * 100);
         this.enemyMap.push({
           tile: enemyTile,
-          x: j * 100 + mapOffset,
-          y: i * 100,
+          x: enemyTile.x,
+          y: enemyTile.y,
         });
       }
     }
@@ -383,7 +591,7 @@ Game.prototype = {
                       .toArray()
                       .value();
     console.log(this.turnOrder);
-    this.turnOrder[0].toggleDisplay();
+    this.turnOrder[0].startTurn();
 
     /* INIT CONTROLS */
     this.input.mouse.mouseDownCallback = (e) => {
@@ -412,11 +620,6 @@ Game.prototype = {
   //     this.charFocus = character.loc;
   //   }
   // },
-
-  _enableTargeting: function (origin, range) {
-    this.mapClear = false;
-    this.getEnemyTargets[range].bind(this)(origin);
-  },
 
   _enableMove: function (loc) {
     this.mapClear = false;
@@ -454,6 +657,7 @@ Game.prototype = {
 
       if (val.character) {
         val.character.sprite.events.onInputDown.removeAll();
+
         // val.character.sprite.events.onInputDown.add(val.character.onClick);
         val.character.onHover(false);
 
@@ -520,6 +724,11 @@ Game.prototype = {
     });
   },
 
+  _enableTargeting: function (origin, range, targetSide) {
+    this.mapClear = false;
+    this.getPlayerTargets[range].bind(this)(origin, targetSide);
+  },
+
   _playerActionHandler: function (action, loc, params) {
     if (action === 'select') {
       // TODO: currently not being used (the select action)
@@ -527,25 +736,27 @@ Game.prototype = {
     } else if (action === 'move') {
       this._enableMove(loc);
     } else if (action === 'attack') {
-      this._enableTargeting(loc, params.range);
+      this._enableTargeting(loc, params.range, 'enemy');
     }
   },
 
   _enemyActionHandler: function (action, loc) {
     if (action === 'kill') {
       this._killCharacter(this.enemyMap, loc);
+    } else if (action === 'targetPlayer') {
+      console.log(this.getEnemyTargets.swing.bind(this)(loc));
     }
   },
 
   _manageTurn: function () {
-    this.turnOrder[this.currentTurn].toggleDisplay();
+    this.turnOrder[this.currentTurn].endTurn();
 
     this.currentTurn += 1;
     if (this.currentTurn >= this.turnOrder.length) {
       this.currentTurn = 0;
     }
 
-    this.turnOrder[this.currentTurn].toggleDisplay();
+    this.turnOrder[this.currentTurn].startTurn();
   },
 
   _killCharacter: function (map, loc) {
