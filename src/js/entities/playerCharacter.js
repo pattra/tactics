@@ -50,6 +50,10 @@ const PlayerCharacter = function (game, x, y, properties) {
     this.toggleDisplay();
   };
 
+  this.endTurn = () => {
+    this.toggleDisplay();
+  };
+
   this.changeHP = (amt) => {
     this.currentStats.hp = this.currentStats.hp + amt;
 

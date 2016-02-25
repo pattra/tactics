@@ -10,6 +10,7 @@ const EnemyCharacter = function (game, x, y, properties) {
 
   this.preview = new Preview(game, x, y, properties);
   this.name = properties.name;
+  this.range = properties.range;
   this.baseStats = {
     hp: properties.hp,
     speed: properties.speed,

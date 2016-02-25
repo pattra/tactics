@@ -16,24 +16,24 @@ const PLAYER_FILE = {
       isPlayer: true,
       loc: 1,
       attack: 1,
-      speed: 12,
-      range: 'pierce',
+      speed: 1,
+      range: 'all',
     },
     {
       name: 'Fenris',
       hp: 15,
-      loc: 5,
+      loc: 3,
       attack: 3,
-      speed: 4,
+      speed: 1,
       range: 'swing',
     },
     {
       name: 'Corrin',
       hp: 15,
-      loc: 2,
+      loc: 0,
       attack: 2,
-      speed: 6,
-      range: 'reach',
+      speed: 1,
+      range: 'impact',
     },
   ],
 };
@@ -43,39 +43,39 @@ const LEVEL_MAP = {
     {
       name: 'baddie 1',
       hp: 3,
-      loc: 0,
+      loc: 2,
       speed: 15,
-      range: 'pierce',
+      range: 'spread',
     },
     {
       name: 'baddie 2',
       hp: 5,
-      loc: 7,
-      speed: 2,
+      loc: 5,
+      speed: 1,
     },
     {
       name: 'baddie 3',
       hp: 3,
       loc: 1,
-      speed: 3,
+      speed: 1,
     },
     {
       name: 'baddie 4',
       hp: 3,
-      loc: 2,
-      speed: 3,
+      loc: 4,
+      speed: 1,
     },
     {
       name: 'baddie 5',
       hp: 3,
-      loc: 3,
+      loc: 7,
       speed: 1,
     },
     {
       name: 'baddie 6',
       hp: 3,
-      loc: 4,
-      speed: 2,
+      loc: 6,
+      speed: 1,
     },
   ],
 };
@@ -90,18 +90,24 @@ const Game = function () {
   this.turnOrder = {};
   this.needReorder = false;
 
-  // TODO: probably want to consolidate this with getPlayerTargets at some point,
-  // the code is pretty repetitive
-  this.getEnemyTargets = {
+  this._pushNeighborsUtil = (nbArr, char, loc) => {
+    nbArr.push(char ? char : { loc });
+  },
+
+  this.getTargets = {
     melee: function (origin, targetSide) {
+      /* [ ][ ][ ]
+         [x][ ][ ]
+         [ ][ ][ ] */
+      const map = targetSide === 'enemy' ? this.enemyMap : this.playerMap;
       const targetable = [];
       let index;
 
-      for (let i = MAP_SIZE; i > 0; i--) {
+      for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
-          index = i * MAP_SIZE - j - 1;
-          if (this.playerMap[index].character) {
-            targetable.push({ target: this.playerMap[index].character, neighbors: [] });
+          index = i * MAP_SIZE + j;
+          if (map[index].character) {
+            targetable.push({ target: map[index].character, neighbors: [] });
             break;
           }
         }
@@ -110,12 +116,12 @@ const Game = function () {
       return targetable;
     },
 
-    ranged: function (origin) {
+    ranged: function (origin, targetSide) {
       /* [ ][ ][ ]
          [ ][x][ ] (any)
          [ ][ ][ ] */
+      const map = targetSide === 'enemy' ? this.enemyMap : this.playerMap;
       const targetable = [];
-      const map = this.playerMap;
 
       for (let i = 0; i < MAP_TOTAL_TILES; i++) {
         if (map[i].character) {
@@ -126,140 +132,14 @@ const Game = function () {
       return targetable;
     },
 
-    reach: function (origin) {
+    reach: function (origin, targetSide) {
       /* [ ][ ][ ]
          [x][x][ ]
          [ ][ ][ ] */
+      const map = targetSide === 'enemy' ? this.enemyMap : this.playerMap;
       const targetable = [];
-      const map = this.playerMap;
       let index;
       let reachIndex;
-      let neighbors;
-
-      for (let i = MAP_SIZE; i > 0; i--) {
-        for (let j = 0; j < MAP_SIZE; j++) {
-          index = i * MAP_SIZE - j - 1;
-          if (map[index].character) {
-            neighbors = [];
-            reachIndex = index - 1;
-
-            if (reachIndex % MAP_SIZE !== (MAP_SIZE - 1) && map[reachIndex].character) {
-              neighbors.push(map[reachIndex].character);
-            }
-
-            targetable.push({ target: map[index].character, neighbors });
-
-            break;
-          }
-        }
-      }
-
-      return targetable;
-    },
-
-    pierce: function (origin) {
-      /* [ ][ ][ ]
-         [x][x][x]
-         [ ][ ][ ] */
-      const targetable = [];
-      const map = this.playerMap;
-      let index;
-      let neighbors;
-
-      for (let i = MAP_SIZE; i > 0; i--) {
-        for (let j = 0; j < MAP_SIZE; j++) {
-          index = i * MAP_SIZE - j - 1;
-          if (map[index].character) {
-            neighbors = [];
-            for (let k = i - 1; k < i * MAP_SIZE; k++) {
-              if (k !== index && map[k].character) {
-                neighbors.push(map[k].character);
-              }
-            }
-
-            targetable.push({ target: map[index].character, neighbors });
-            break;
-          }
-        }
-      }
-
-      return targetable;
-    },
-
-    spread: function (origin) {
-      /* [ ][x][ ]
-         [x][x][x]
-         [ ][x][ ] */
-      const targetable = [];
-      const map = this.playerMap;
-      let index;
-      let neighbors;
-
-      for (let i = MAP_SIZE; i > 0; i--) {
-        for (let j = 0; j < MAP_SIZE; j++) {
-          index = i * MAP_SIZE - j - 1;
-          if (map[index].character) {
-            neighbors = [];
-
-            // horizontal checks
-            if ((index + 1) % 3 > index % 3
-                && (index + 1) < MAP_TOTAL_TILES
-                && map[index + 1].character) neighbors.push(map[index + 1].character);
-            if ((index - 1) % 3 < index % 3
-                && (index - 1) > -1
-                && map[index - 1].character) neighbors.push(map[index - 1].character);
-
-            // vertical checks
-            if ((index + 3) < MAP_TOTAL_TILES) neighbors.push(map[index + 3].character);
-            if ((index - 3) > -1) neighbors.push([index - 3].character);
-
-            targetable.push({ target: map[index].character, neighbors });
-          }
-        }
-      }
-
-      return targetable;
-    },
-
-    swing: function (origin) {
-      /* [O][ ][x]
-         [x][x][O]
-         [ ][O][x] */
-      const map = this.playerMap;
-      const targetable = [];
-      let index;
-      let neighbors;
-      let topIndex;
-      let botIndex;
-
-      for (let i = MAP_SIZE; i > 0; i--) {
-        for (let j = 0; j < MAP_SIZE; j++) {
-          index = i * MAP_SIZE - j - 1;
-
-          if (map[index].character) {
-            neighbors = [];
-            topIndex = index - MAP_SIZE;
-            botIndex = index + MAP_SIZE;
-
-            if (topIndex > -1 && map[topIndex].character) neighbors.push(map[topIndex].character);
-            if (botIndex < MAP_TOTAL_TILES && map[botIndex].character) neighbors.push(map[botIndex].character);
-
-            targetable.push({ target: map[index].character, neighbors });
-            break;
-          }
-        }
-      }
-
-      return targetable;
-    },
-
-    impact: function (origin) {
-      /* [x][ ][ ]
-         [x][ ][ ]
-         [x][ ][ ] */
-      const map = this.playermap;
-      const targetable = [];
-      let index;
       let neighbors;
 
       for (let i = 0; i < MAP_SIZE; i++) {
@@ -267,119 +147,27 @@ const Game = function () {
           index = i * MAP_SIZE + j;
           if (map[index].character) {
             neighbors = [];
-
-            for (let k = j; k < (j + 1 + (MAP_SIZE * (MAP_SIZE - 1))); k += 3) {
-              if (k !== index) neighbors.push(map[k].character);
-            }
-
-            targetable.push({ target: map[index].character, neighbors });
-            break;
-          }
-        }
-      }
-
-      return targetable;
-    },
-
-    all: function (origin) {
-      /* [x][x][x]
-         [x][x][x]
-         [x][x][x] */
-      const map = this.playerMap;
-      const targetable = [];
-      let neighbors;
-
-      for (let i = 0; i < MAP_TOTAL_TILES; i++) {
-        if (map[i].character) {
-          neighbors = [];
-
-          for (let j = 0; j < MAP_TOTAL_TILES; j++) {
-            if (j !== i) neighbors.push(j);
-          }
-
-          targetable.push({ target: map[index].character, neighbors });
-        }
-      }
-
-      return targetable;
-    },
-  };
-
-  this.getPlayerTargets = {
-    melee: function (origin, targetSide) {
-      /* [ ][ ][ ]
-         [x][ ][ ]
-         [ ][ ][ ] */
-      let index;
-
-      if (targetSide === 'player') {
-        for (let i = MAP_SIZE; i > 0; i--) {
-          for (let j = 0; j < MAP_SIZE; j++) {
-            index = i * MAP_SIZE - j - 1;
-            if (this.playerMap[index].character) {
-              this._setUpTarget(this.enemyMap, origin, index, []);
-              break;
-            }
-          }
-        }
-      } else if (targetSide === 'enemy') {
-        for (let i = 0; i < MAP_SIZE; i++) {
-          for (let j = 0; j < MAP_SIZE; j++) {
-            index = i * MAP_SIZE + j;
-            if (this.enemyMap[index].character) {
-              this._setUpTarget(this.enemyMap, origin, index, []);
-              break;
-            }
-          }
-        }
-      } else {
-        console.log('um what r u going for kid');
-      }
-    },
-
-    ranged: function (origin) {
-      /* [ ][ ][ ]
-         [ ][x][ ] (any)
-         [ ][ ][ ] */
-      const map = this.enemyMap;
-
-      for (let i = 0; i < MAP_TOTAL_TILES; i++) {
-        if (map[i].character) {
-          this._setUpTarget(map, origin, i, []);
-        }
-      }
-    },
-
-    reach: function (origin) {
-      /* [ ][ ][ ]
-         [x][x][ ]
-         [ ][ ][ ] */
-      const map = this.enemyMap;
-      let index;
-      let reachIndex;
-
-      for (let i = 0; i < MAP_SIZE; i++) {
-        for (let j = 0; j < MAP_SIZE; j++) {
-          index = i * MAP_SIZE + j;
-          if (map[index].character) {
             reachIndex = index + 1;
+
             if (reachIndex % MAP_SIZE !== 0) {
-              this._setUpTarget(map, origin, index, [reachIndex]);
-            } else {
-              this._setUpTarget(map, origin, index, []);
+              this._pushNeighborsUtil(neighbors, map[reachIndex].character, reachIndex);
             }
 
+            targetable.push({ target: map[index].character, neighbors });
             break;
           }
         }
       }
+
+      return targetable;
     },
 
-    pierce: function (origin) {
+    pierce: function (origin, targetSide) {
       /* [ ][ ][ ]
          [x][x][x]
          [ ][ ][ ] */
-      const map = this.enemyMap;
+      const map = targetSide === 'enemy' ? this.enemyMap : this.playerMap;
+      const targetable = [];
       let index;
       let neighbors;
 
@@ -389,21 +177,24 @@ const Game = function () {
           if (map[index].character) {
             neighbors = [];
             for (let k = i * MAP_SIZE; k < (i + 1) * MAP_SIZE; k++) {
-              if (k !== index) neighbors.push(k);
+              if (k !== index) this._pushNeighborsUtil(neighbors, map[k].character, k);
             }
 
-            this._setUpTarget(map, origin, index, neighbors);
+            targetable.push({ target: map[index].character, neighbors });
             break;
           }
         }
       }
+
+      return targetable;
     },
 
-    spread: function (origin) {
+    spread: function (origin, targetSide) {
       /* [ ][x][ ]
          [x][x][x]
          [ ][x][ ] */
-      const map = this.enemyMap;
+      const map = targetSide === 'enemy' ? this.enemyMap : this.playerMap;
+      const targetable = [];
       let index;
       let neighbors;
 
@@ -414,24 +205,27 @@ const Game = function () {
             neighbors = [];
 
             // horizontal checks
-            if ((index + 1) % 3 > index % 3 && (index + 1) < MAP_TOTAL_TILES) neighbors.push(index + 1);
-            if ((index - 1) % 3 < index % 3 && (index - 1) > -1) neighbors.push(index - 1);
+            if ((index + 1) % 3 > index % 3 && (index + 1) < MAP_TOTAL_TILES) this._pushNeighborsUtil(neighbors, map[index + 1].character, index + 1);
+            if ((index - 1) % 3 < index % 3 && (index - 1) > -1) this._pushNeighborsUtil(neighbors, map[index - 1].character, index - 1);
 
             // vertical checks
-            if ((index + 3) < MAP_TOTAL_TILES) neighbors.push(index + 3);
-            if ((index - 3) > -1) neighbors.push(index - 3);
+            if ((index + 3) < MAP_TOTAL_TILES) this._pushNeighborsUtil(neighbors, map[index + 3].character, index + 3);
+            if ((index - 3) > -1) this._pushNeighborsUtil(neighbors, map[index - 3].character, index - 3);
 
-            this._setUpTarget(map, origin, index, neighbors);
+            targetable.push({ target: map[index].character, neighbors });
           }
         }
       }
+
+      return targetable;
     },
 
-    swing: function (origin) {
+    swing: function (origin, targetSide) {
       /* [O][ ][x]
          [x][x][O]
          [ ][O][x] */
-      const map = this.enemyMap;
+      const map = targetSide === 'enemy' ? this.enemyMap : this.playerMap;
+      const targetable = [];
       let index;
       let neighbors;
       let topIndex;
@@ -446,21 +240,24 @@ const Game = function () {
             topIndex = index - MAP_SIZE;
             botIndex = index + MAP_SIZE;
 
-            if (topIndex > -1) neighbors.push(index - MAP_SIZE);
-            if (botIndex < MAP_TOTAL_TILES) neighbors.push(index + MAP_SIZE);
+            if (topIndex > -1) this._pushNeighborsUtil(neighbors, map[topIndex].character, topIndex);
+            if (botIndex < MAP_TOTAL_TILES) this._pushNeighborsUtil(neighbors, map[botIndex].character, botIndex);
 
-            this._setUpTarget(map, origin, index, neighbors);
+            targetable.push({ target: map[index].character, neighbors });
             break;
           }
         }
       }
+
+      return targetable;
     },
 
-    impact: function (origin) {
+    impact: function (origin, targetSide) {
       /* [x][ ][ ]
          [x][ ][ ]
          [x][ ][ ] */
-      const map = this.enemyMap;
+      const map = targetSide === 'enemy' ? this.enemyMap : this.playerMap;
+      const targetable = [];
       let index;
       let neighbors;
 
@@ -471,21 +268,24 @@ const Game = function () {
             neighbors = [];
 
             for (let k = j; k < (j + 1 + (MAP_SIZE * (MAP_SIZE - 1))); k += 3) {
-              if (k !== index) neighbors.push(k);
+              if (k !== index) this._pushNeighborsUtil(neighbors, map[k].character, k);
             }
 
-            this._setUpTarget(map, origin, index, neighbors);
+            targetable.push({ target: map[index].character, neighbors });
             break;
           }
         }
       }
+
+      return targetable;
     },
 
-    all: function (origin) {
+    all: function (origin, targetSide) {
       /* [x][x][x]
          [x][x][x]
          [x][x][x] */
-      const map = this.enemyMap;
+      const map = targetSide === 'enemy' ? this.enemyMap : this.playerMap;
+      const targetable = [];
       let neighbors;
 
       for (let i = 0; i < MAP_TOTAL_TILES; i++) {
@@ -493,12 +293,14 @@ const Game = function () {
           neighbors = [];
 
           for (let j = 0; j < MAP_TOTAL_TILES; j++) {
-            if (j !== i) neighbors.push(j);
+            if (j !== i) this._pushNeighborsUtil(neighbors, map[j].character, j);;
           }
 
-          this._setUpTarget(map, origin, i, neighbors);
+          targetable.push({ target: map[i].character, neighbors });
         }
       }
+
+      return targetable;
     },
   };
 
@@ -530,13 +332,12 @@ Game.prototype = {
     const mapOffset = 400;
     let i;
     let j;
+    let playerTile;
+    let enemyTile;
 
     /* INIT TILES */
     for (i = 0; i < MAP_SIZE; i++) {
-      for (j = 0; j < MAP_SIZE; j++) {
-        let playerTile;
-        let enemyTile;
-
+      for (j = MAP_SIZE - 1; j >= 0; j--) {
         // player tiles
         playerTile = new Tile(this.game, j * 100, i * 100);
         this.playerMap.push({
@@ -544,7 +345,11 @@ Game.prototype = {
           x: playerTile.x,
           y: playerTile.y,
         });
+      }
+    }
 
+    for (i = 0; i < MAP_SIZE; i++) {
+      for (j = 0; j < MAP_SIZE; j++) {
         // enemy tiles
         enemyTile = new Tile(this.game, j * 100 + mapOffset, i * 100);
         this.enemyMap.push({
@@ -677,7 +482,7 @@ Game.prototype = {
 
     recip.changeHP(-1 * actor.currentStats.attack);
     neighbors.forEach(n => {
-      if (recipMap[n].character) recipMap[n].character.changeHP(-1 * actor.currentStats.attack);
+      if (recipMap[n.loc].character) recipMap[n.loc].character.changeHP(-1 * actor.currentStats.attack);
     });
     this._clearMap(recipMap);
     this._manageTurn();
@@ -698,35 +503,41 @@ Game.prototype = {
     tile.events.onInputOver.add(() => {
       tile.setStatus(frameName);
       neighbors.forEach((n) => {
-        map[n].tile.setStatus('affect');
+        map[n.loc].tile.setStatus('affect');
       });
     });
 
     tile.events.onInputOut.add(() => {
       tile.setStatus('default');
       neighbors.forEach((n) => {
-        map[n].tile.setStatus('default');
+        map[n.loc].tile.setStatus('default');
       });
     });
 
     char.events.onInputOver.add(() => {
       tile.setStatus(frameName);
       neighbors.forEach((n) => {
-        map[n].tile.setStatus('affect');
+        map[n.loc].tile.setStatus('affect');
       });
     });
 
     char.events.onInputOut.add(() => {
       tile.setStatus('default');
       neighbors.forEach((n) => {
-        map[n].tile.setStatus('default');
+        map[n.loc].tile.setStatus('default');
       });
     });
   },
 
   _enableTargeting: function (origin, range, targetSide) {
     this.mapClear = false;
-    this.getPlayerTargets[range].bind(this)(origin, targetSide);
+    const map = targetSide === 'enemy' ? this.enemyMap : this.playerMap;
+    const targets = this.getTargets[range].bind(this)(origin, targetSide);
+
+    targets.forEach((t, index) => {
+      console.log(t.target.loc, t.neighbors);
+      this._setUpTarget(map, origin, t.target.loc, t.neighbors);
+    });
   },
 
   _playerActionHandler: function (action, loc, params) {
@@ -744,7 +555,8 @@ Game.prototype = {
     if (action === 'kill') {
       this._killCharacter(this.enemyMap, loc);
     } else if (action === 'targetPlayer') {
-      console.log(this.getEnemyTargets.swing.bind(this)(loc));
+      let originChar = this.enemyMap[loc].character;
+      console.log(this.getTargets[originChar.range].bind(this)(loc, 'player'));
     }
   },
 
