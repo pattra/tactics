@@ -13,10 +13,12 @@ const EnemyCharacter = function (game, x, y, properties) {
   this.range = properties.range;
   this.baseStats = {
     hp: properties.hp,
+    attack: properties.attack,
     speed: properties.speed,
   };
   this.currentStats = {
     hp: properties.hp,
+    attack: properties.attack,
     speed: properties.speed,
   };
 
@@ -26,12 +28,28 @@ const EnemyCharacter = function (game, x, y, properties) {
   };
 
   this.startTurn = () => {
-    console.log('beep bop');
+    console.log('enemyCharacter: starting turn');
     this.getTargets();
+  };
+
+  this.endTurn = () => {
+    console.log('ending enemy turn');
   };
 
   this.getTargets = () => {
     this.handler('targetPlayer', this.loc);
+  };
+
+  this._getRandomInt = (min, max) => {
+    return Math.floor(Math.random() * (max - min)) + min;
+  };
+
+  this.chooseTarget = (targets) => {
+    const numTargets = targets.length;
+    const targetLoc = this._getRandomInt(0, numTargets);
+
+    console.log('i choose you', targets[targetLoc]);
+    return targets[targetLoc];
   };
 
   this.changeHP = (amt) => {

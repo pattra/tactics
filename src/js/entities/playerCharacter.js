@@ -87,6 +87,7 @@ const PlayerCharacter = function (game, x, y, properties) {
   this.sprite.inputEnabled = true;
   this.sprite.events.onInputOver.add(() => { this.onHover(true); });
   this.sprite.events.onInputOut.add(() => { this.onHover(false); });
+
   // this.sprite.events.onInputDown.add(this.onClick);
 };
 

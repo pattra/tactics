@@ -12,11 +12,11 @@ const PLAYER_FILE = {
   party: [
     {
       name: 'Sobel',
-      hp: 10,
+      hp: 15,
       isPlayer: true,
       loc: 1,
       attack: 1,
-      speed: 1,
+      speed: 14,
       range: 'all',
     },
     {
@@ -44,6 +44,7 @@ const LEVEL_MAP = {
       name: 'baddie 1',
       hp: 3,
       loc: 2,
+      attack: 1,
       speed: 15,
       range: 'spread',
     },
@@ -51,31 +52,40 @@ const LEVEL_MAP = {
       name: 'baddie 2',
       hp: 5,
       loc: 5,
+      attack: 1,
       speed: 1,
+      range: 'melee',
     },
     {
       name: 'baddie 3',
       hp: 3,
       loc: 1,
+      attack: 1,
       speed: 1,
+      range: 'ranged',
     },
     {
       name: 'baddie 4',
       hp: 3,
       loc: 4,
+      attack: 1,
       speed: 1,
+      range: 'all',
     },
     {
       name: 'baddie 5',
       hp: 3,
       loc: 7,
       speed: 1,
+      range: 'melee',
     },
     {
       name: 'baddie 6',
       hp: 3,
       loc: 6,
+      attack: 1,
       speed: 1,
+      range: 'swing',
     },
   ],
 };
@@ -395,7 +405,6 @@ Game.prototype = {
                       .sortBy(c => { return c.baseStats.speed * -1; })
                       .toArray()
                       .value();
-    console.log(this.turnOrder);
     this.turnOrder[0].startTurn();
 
     /* INIT CONTROLS */
@@ -488,6 +497,21 @@ Game.prototype = {
     this._manageTurn();
   },
 
+  _enemyTargetCharacter: function (origin, target, neighbors) {
+    console.log(target);
+    let recipMap = this.playerMap;
+    let actor = this.enemyMap[origin].character;
+    let recip = recipMap[target].character;
+
+    recip.changeHP(-1 * actor.currentStats.attack);
+    neighbors.forEach(n => {
+      console.log(recipMap[n.loc].character, n.loc);
+      if (recipMap[n.loc].character) recipMap[n.loc].character.changeHP(-1 * actor.currentStats.attack);
+    });
+    this._clearMap(recipMap);
+    this._manageTurn();
+  },
+
   _setUpTarget: function (map, origin, loc, neighbors) {
     let val = map[loc];
 
@@ -555,8 +579,11 @@ Game.prototype = {
     if (action === 'kill') {
       this._killCharacter(this.enemyMap, loc);
     } else if (action === 'targetPlayer') {
-      let originChar = this.enemyMap[loc].character;
-      console.log(this.getTargets[originChar.range].bind(this)(loc, 'player'));
+      const originChar = this.enemyMap[loc].character;
+      const playerTargets = this.getTargets[originChar.range].bind(this)(loc, 'player');
+      const t = this.enemyMap[loc].character.chooseTarget(playerTargets);
+
+      this._enemyTargetCharacter(loc, t.target.loc, t.neighbors);
     }
   },
 
