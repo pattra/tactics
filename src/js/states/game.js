@@ -24,7 +24,7 @@ const PLAYER_FILE = {
       hp: 15,
       loc: 3,
       attack: 3,
-      speed: 1,
+      speed: 16,
       range: 'swing',
     },
     {
@@ -403,7 +403,6 @@ Game.prototype = {
                       .filter(tile => { return tile.character; })
                       .map('character')
                       .sortBy(c => { return c.baseStats.speed * -1; })
-                      .toArray()
                       .value();
     this.turnOrder[0].startTurn();
 
@@ -498,14 +497,12 @@ Game.prototype = {
   },
 
   _enemyTargetCharacter: function (origin, target, neighbors) {
-    console.log(target);
     let recipMap = this.playerMap;
     let actor = this.enemyMap[origin].character;
     let recip = recipMap[target].character;
 
     recip.changeHP(-1 * actor.currentStats.attack);
     neighbors.forEach(n => {
-      console.log(recipMap[n.loc].character, n.loc);
       if (recipMap[n.loc].character) recipMap[n.loc].character.changeHP(-1 * actor.currentStats.attack);
     });
     this._clearMap(recipMap);
@@ -559,7 +556,6 @@ Game.prototype = {
     const targets = this.getTargets[range].bind(this)(origin, targetSide);
 
     targets.forEach((t, index) => {
-      console.log(t.target.loc, t.neighbors);
       this._setUpTarget(map, origin, t.target.loc, t.neighbors);
     });
   },
@@ -588,10 +584,19 @@ Game.prototype = {
   },
 
   _manageTurn: function () {
+    const len = this.turnOrder.length;
     this.turnOrder[this.currentTurn].endTurn();
 
     this.currentTurn += 1;
-    if (this.currentTurn >= this.turnOrder.length) {
+    while (!this.turnOrder[this.currentTurn] &&
+           this.currentTurn <= len) {
+      this.currentTurn += 1;
+    }
+
+    if (this.currentTurn >= len) {
+      _.remove(this.turnOrder, (char) => {
+        return char === null;
+      });
       this.currentTurn = 0;
     }
 
@@ -599,6 +604,16 @@ Game.prototype = {
   },
 
   _killCharacter: function (map, loc) {
+    const len = this.turnOrder.length;
+    for (let i = 0; i < len; i++) {
+      if (this.turnOrder[i] &&
+          this.turnOrder[i] === map[loc].character) {
+        console.log('killing', this.turnOrder[i]);
+        this.turnOrder[i] = null;
+        break;
+      }
+    }
+
     map[loc].character = null;
   },
 };

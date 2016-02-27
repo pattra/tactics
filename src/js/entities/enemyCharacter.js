@@ -28,7 +28,7 @@ const EnemyCharacter = function (game, x, y, properties) {
   };
 
   this.startTurn = () => {
-    console.log('enemyCharacter: starting turn');
+    console.log('enemyCharacter', this.name, 'starting turn');
     this.getTargets();
   };
 
@@ -48,7 +48,7 @@ const EnemyCharacter = function (game, x, y, properties) {
     const numTargets = targets.length;
     const targetLoc = this._getRandomInt(0, numTargets);
 
-    console.log('i choose you', targets[targetLoc]);
+    console.log('targeting', targets[targetLoc].target.name, targetLoc);
     return targets[targetLoc];
   };
 
