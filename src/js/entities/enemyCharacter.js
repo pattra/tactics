@@ -3,6 +3,8 @@
 const Preview = require('../entities/charBattlePreview');
 
 const EnemyCharacter = function (game, x, y, properties) {
+  this.sprite = game.add.sprite(x, y, properties.sprite);
+
   /* PROPERTIES */
   this.loc = properties.loc;
   this.handler = properties.actionHandler;
@@ -20,6 +22,14 @@ const EnemyCharacter = function (game, x, y, properties) {
     hp: properties.hp,
     attack: properties.attack,
     speed: properties.speed,
+  };
+
+  const style = { font: '24px Arial', fill: '#fff' };
+  const damageText = game.add.text(this.sprite.x, this.sprite.y, '', style);
+
+  /* SECRET... */
+  const _getRandomInt = (min, max) => {
+    return Math.floor(Math.random() * (max - min)) + min;
   };
 
   /* FUNCTIONS */
@@ -40,13 +50,9 @@ const EnemyCharacter = function (game, x, y, properties) {
     this.handler('targetPlayer', this.loc);
   };
 
-  this._getRandomInt = (min, max) => {
-    return Math.floor(Math.random() * (max - min)) + min;
-  };
-
   this.chooseTarget = (targets) => {
     const numTargets = targets.length;
-    const targetLoc = this._getRandomInt(0, numTargets);
+    const targetLoc = _getRandomInt(0, numTargets);
 
     console.log('targeting', targets[targetLoc].target.name, targetLoc);
     return targets[targetLoc];
@@ -55,17 +61,26 @@ const EnemyCharacter = function (game, x, y, properties) {
   this.changeHP = (amt) => {
     this.currentStats.hp = this.currentStats.hp + amt;
 
-    if (this.currentStats.hp < 1) {
-      this.sprite.kill();
-      this.handler('kill', this.loc);
-      return;
-    } else {
-      if (this.currentStats.hp > this.baseStats.hp) {
-        this.currentStats.hp = this.baseStats.hp;
-      }
+    // damage anim
+    damageText.x = this.sprite.x;
+    damageText.y = this.sprite.y;
+    damageText.setText(amt);
 
-      this.preview.updateHP(this.currentStats.hp, this.baseStats.hp);
-    }
+    setTimeout(() => {
+      if (this.currentStats.hp < 1) {
+        damageText.kill();
+        this.sprite.kill();
+        this.handler('kill', this.loc);
+        return;
+      } else {
+        if (this.currentStats.hp > this.baseStats.hp) {
+          this.currentStats.hp = this.baseStats.hp;
+        }
+
+        damageText.setText('');
+        this.preview.updateHP(this.currentStats.hp, this.baseStats.hp);
+      }
+    }, 1000);
   };
 
   this.changeLoc = (loc, x, y) => {
@@ -77,8 +92,6 @@ const EnemyCharacter = function (game, x, y, properties) {
   this.onClick = () => {
     this.handler('select', this.loc);
   };
-
-  this.sprite = game.add.sprite(x, y, properties.sprite);
 
   this.sprite.inputEnabled = true;
   this.sprite.events.onInputOver.add(() => { this.onHover(true); });

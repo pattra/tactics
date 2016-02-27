@@ -4,6 +4,8 @@ const Preview = require('../entities/charBattlePreview');
 const Detail = require('../entities/charBattleDetail');
 
 const PlayerCharacter = function (game, x, y, properties) {
+  this.sprite = game.add.sprite(x, y, properties.sprite);
+
   /* PROPERTIES */
   this.loc = properties.loc;
   this.range = properties.range;
@@ -34,6 +36,9 @@ const PlayerCharacter = function (game, x, y, properties) {
     speed: properties.speed,
   };
 
+  const style = { font: '24px Arial', fill: '#fff' };
+  const damageText = game.add.text(this.sprite.x, this.sprite.y, '', style);
+
   /* FUNCTIONS */
   this.onHover = (cursorOn) => {
     this.preview.toggleDisplay(cursorOn);
@@ -58,18 +63,27 @@ const PlayerCharacter = function (game, x, y, properties) {
   this.changeHP = (amt) => {
     this.currentStats.hp = this.currentStats.hp + amt;
 
-    if (this.currentStats.hp < 1) {
-      this.sprite.kill();
-      this.handler('kill', this.loc);
-      return;
-    } else {
-      if (this.currentStats.hp > this.baseStats.hp) {
-        this.currentStats.hp = this.baseStats.hp;
-      }
+    // damage anim
+    damageText.x = this.sprite.x;
+    damageText.y = this.sprite.y;
+    damageText.setText(amt);
 
-      this.preview.updateHP(this.currentStats.hp, this.baseStats.hp);
-      this.detail.updateHP(this.currentStats.hp, this.baseStats.hp);
-    }
+    setTimeout(() => {
+      if (this.currentStats.hp < 1) {
+        damageText.kill();
+        this.sprite.kill();
+        this.handler('kill', this.loc);
+        return;
+      } else {
+        if (this.currentStats.hp > this.baseStats.hp) {
+          this.currentStats.hp = this.baseStats.hp;
+        }
+
+        damageText.setText('');
+        this.preview.updateHP(this.currentStats.hp, this.baseStats.hp);
+        this.detail.updateHP(this.currentStats.hp, this.baseStats.hp);
+      }
+    }, 1000);
   };
 
   this.changeLoc = (loc, x, y) => {
@@ -82,8 +96,6 @@ const PlayerCharacter = function (game, x, y, properties) {
     this.handler('select', this.loc);
     this.detail.toggleDisplay();
   };
-
-  this.sprite = game.add.sprite(x, y, properties.sprite);
 
   this.sprite.inputEnabled = true;
   this.sprite.events.onInputOver.add(() => { this.onHover(true); });

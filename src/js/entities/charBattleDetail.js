@@ -6,7 +6,7 @@ const CharBattleDetail = function (game, x, y, properties, handler) {
   this.text = {};
   this.handler = handler;
 
-  const style = { font: '24px Arial', fill: '#ff0044' };
+  const style = { font: '24px Arial', fill: '#ffffff' };
 
   /* full detail panel */
   this.text.name = game.add.text(0, game.world.centerY, properties.name, style, this.vitals);

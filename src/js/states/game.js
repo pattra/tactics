@@ -35,7 +35,7 @@ const PLAYER_FILE = {
       loc: 0,
       attack: 2,
       speed: 1,
-      range: 'impact',
+      range: 'reach',
       team: 'player',
     },
   ],
@@ -503,7 +503,8 @@ Game.prototype = {
       if (recipMap[n.loc].character) recipMap[n.loc].character.changeHP(-1 * actor.currentStats.attack);
     });
     this._clearMap(recipMap);
-    this._manageTurn();
+
+    setTimeout(this._manageTurn.bind(this), 1000);
   },
 
   _enemyTargetCharacter: function (origin, target, neighbors) {
@@ -516,7 +517,7 @@ Game.prototype = {
       if (recipMap[n.loc].character) recipMap[n.loc].character.changeHP(-1 * actor.currentStats.attack);
     });
     this._clearMap(recipMap);
-    this._manageTurn();
+    setTimeout(this._manageTurn.bind(this), 1000);
   },
 
   _setUpTarget: function (map, origin, loc, neighbors) {
@@ -598,7 +599,7 @@ Game.prototype = {
 
       this._enemySetUpTarget(this.playerMap, t.target.loc, t.neighbors);
 
-      setTimeout(() => { this._enemyTargetCharacter(loc, t.target.loc, t.neighbors); }, 2000);
+      setTimeout(() => { this._enemyTargetCharacter(loc, t.target.loc, t.neighbors); }, 1000);
     }
   },
 
