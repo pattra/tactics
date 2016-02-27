@@ -7,6 +7,7 @@ const PlayerCharacter = function (game, x, y, properties) {
   /* PROPERTIES */
   this.loc = properties.loc;
   this.range = properties.range;
+  this.team = properties.team;
 
   this.handler = properties.actionHandler;
   this.UIHandler = (action, params) => {

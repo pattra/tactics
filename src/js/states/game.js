@@ -18,6 +18,7 @@ const PLAYER_FILE = {
       attack: 1,
       speed: 14,
       range: 'all',
+      team: 'player',
     },
     {
       name: 'Fenris',
@@ -26,6 +27,7 @@ const PLAYER_FILE = {
       attack: 3,
       speed: 16,
       range: 'swing',
+      team: 'player',
     },
     {
       name: 'Corrin',
@@ -34,6 +36,7 @@ const PLAYER_FILE = {
       attack: 2,
       speed: 1,
       range: 'impact',
+      team: 'player',
     },
   ],
 };
@@ -47,6 +50,7 @@ const LEVEL_MAP = {
       attack: 1,
       speed: 15,
       range: 'spread',
+      team: 'enemy',
     },
     {
       name: 'baddie 2',
@@ -55,6 +59,7 @@ const LEVEL_MAP = {
       attack: 1,
       speed: 1,
       range: 'melee',
+      team: 'enemy',
     },
     {
       name: 'baddie 3',
@@ -63,6 +68,7 @@ const LEVEL_MAP = {
       attack: 1,
       speed: 1,
       range: 'ranged',
+      team: 'enemy',
     },
     {
       name: 'baddie 4',
@@ -71,6 +77,7 @@ const LEVEL_MAP = {
       attack: 1,
       speed: 1,
       range: 'all',
+      team: 'enemy',
     },
     {
       name: 'baddie 5',
@@ -78,6 +85,7 @@ const LEVEL_MAP = {
       loc: 7,
       speed: 1,
       range: 'melee',
+      team: 'enemy',
     },
     {
       name: 'baddie 6',
@@ -86,6 +94,7 @@ const LEVEL_MAP = {
       attack: 1,
       speed: 1,
       range: 'swing',
+      team: 'enemy',
     },
   ],
 };
@@ -398,12 +407,14 @@ Game.prototype = {
     });
 
     /* INIT TURN ORDER */
-    let combinedMap = this.playerMap.concat(this.enemyMap);
+    const combinedMap = this.playerMap.concat(this.enemyMap);
     this.turnOrder = _.chain(combinedMap)
                       .filter(tile => { return tile.character; })
                       .map('character')
                       .sortBy(c => { return c.baseStats.speed * -1; })
                       .value();
+    const currentMap = this.turnOrder[0].team === 'enemy' ? this.enemyMap : this.playerMap;
+    currentMap[this.turnOrder[0].loc].tile.setStatus('current');
     this.turnOrder[0].startTurn();
 
     /* INIT CONTROLS */
@@ -479,7 +490,6 @@ Game.prototype = {
       }
     });
 
-    // this.charFocus = target;
     this._manageTurn();
   },
 
@@ -518,6 +528,13 @@ Game.prototype = {
     val.tile.inputEnabled = true;
     val.tile.events.onInputDown.add(() => { this._targetCharacter(origin, loc, neighbors); });
     this._setTileHover(map, val.tile, val.character.sprite, 'attack', neighbors);
+  },
+
+  _enemySetUpTarget: function (map, loc, neighbors) {
+    map[loc].tile.setStatus('attack');
+    neighbors.forEach((n) => {
+      map[n.loc].tile.setStatus('affect');
+    });
   },
 
   _setTileHover: function (map, tile, char, frameName, neighbors) {
@@ -579,12 +596,18 @@ Game.prototype = {
       const playerTargets = this.getTargets[originChar.range].bind(this)(loc, 'player');
       const t = this.enemyMap[loc].character.chooseTarget(playerTargets);
 
-      this._enemyTargetCharacter(loc, t.target.loc, t.neighbors);
+      this._enemySetUpTarget(this.playerMap, t.target.loc, t.neighbors);
+
+      setTimeout(() => { this._enemyTargetCharacter(loc, t.target.loc, t.neighbors); }, 2000);
     }
   },
 
   _manageTurn: function () {
     const len = this.turnOrder.length;
+    const prevMap = this.turnOrder[this.currentTurn].team === 'enemy' ? this.enemyMap : this.playerMap;
+    const prevTile = prevMap[this.turnOrder[this.currentTurn].loc].tile;
+
+    prevTile.setStatus('default');
     this.turnOrder[this.currentTurn].endTurn();
 
     this.currentTurn += 1;
@@ -600,6 +623,9 @@ Game.prototype = {
       this.currentTurn = 0;
     }
 
+    const nextMap = this.turnOrder[this.currentTurn].team === 'enemy' ? this.enemyMap : this.playerMap;
+    const nextTile = nextMap[this.turnOrder[this.currentTurn].loc].tile;
+    nextTile.setStatus('current');
     this.turnOrder[this.currentTurn].startTurn();
   },
 
@@ -608,7 +634,6 @@ Game.prototype = {
     for (let i = 0; i < len; i++) {
       if (this.turnOrder[i] &&
           this.turnOrder[i] === map[loc].character) {
-        console.log('killing', this.turnOrder[i]);
         this.turnOrder[i] = null;
         break;
       }

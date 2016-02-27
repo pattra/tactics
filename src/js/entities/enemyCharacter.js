@@ -4,13 +4,13 @@ const Preview = require('../entities/charBattlePreview');
 
 const EnemyCharacter = function (game, x, y, properties) {
   /* PROPERTIES */
-  console.log(properties);
   this.loc = properties.loc;
   this.handler = properties.actionHandler;
 
   this.preview = new Preview(game, x, y, properties);
   this.name = properties.name;
   this.range = properties.range;
+  this.team = properties.team;
   this.baseStats = {
     hp: properties.hp,
     attack: properties.attack,
@@ -29,7 +29,7 @@ const EnemyCharacter = function (game, x, y, properties) {
 
   this.startTurn = () => {
     console.log('enemyCharacter', this.name, 'starting turn');
-    this.getTargets();
+    setTimeout(this.getTargets, 1000);
   };
 
   this.endTurn = () => {
