@@ -543,7 +543,7 @@ Game.prototype = {
   },
 
   _targetCharacter: function (origin, target, neighbors, ability) {
-    let recipMap = ability.targetSide === 'ally' ? this.playerMap : this.enemyMap;
+    let recipMap = ability && ability.targetSide === 'ally' ? this.playerMap : this.enemyMap;
     let actor = this.playerMap[origin].character;
     let recip = recipMap[target].character;
     let amt = !ability ? -1 * actor.currentStats.attack : ability.amt;
