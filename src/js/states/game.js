@@ -16,8 +16,10 @@ const PLAYER_FILE = {
       baseStats: {
         hp: 15,
         attack: 1,
-        speed: 14,
+        magic: 1,
+        speed: 17,
       },
+      abilities: ['heal'],
       range: 'ranged',
       team: 'player',
     },
@@ -29,6 +31,7 @@ const PLAYER_FILE = {
         attack: 3,
         speed: 16,
       },
+      abilities: [],
       range: 'swing',
       team: 'player',
     },
@@ -40,6 +43,7 @@ const PLAYER_FILE = {
         attack: 2,
         speed: 1,
       },
+      abilities: [],
       range: 'reach',
       team: 'player',
     },
@@ -56,6 +60,7 @@ const LEVEL_MAP = {
         attack: 1,
         speed: 15,
       },
+      abilities: [],
       range: 'spread',
       team: 'enemy',
     },
@@ -67,6 +72,7 @@ const LEVEL_MAP = {
         attack: 1,
         speed: 1,
       },
+      abilities: [],
       range: 'melee',
       team: 'enemy',
     },
@@ -78,6 +84,7 @@ const LEVEL_MAP = {
         attack: 1,
         speed: 1,
       },
+      abilities: [],
       range: 'ranged',
       team: 'enemy',
     },
@@ -89,6 +96,7 @@ const LEVEL_MAP = {
         attack: 1,
         speed: 1,
       },
+      abilities: [],
       range: 'all',
       team: 'enemy',
     },
@@ -100,6 +108,7 @@ const LEVEL_MAP = {
         attack: 1,
         speed: 1,
       },
+      abilities: [],
       range: 'melee',
       team: 'enemy',
     },
@@ -111,6 +120,7 @@ const LEVEL_MAP = {
         attack: 1,
         speed: 1,
       },
+      abilities: [],
       range: 'swing',
       team: 'enemy',
     },
@@ -604,6 +614,8 @@ Game.prototype = {
       this._enableMove(loc);
     } else if (action === 'attack') {
       this._enableTargeting(loc, params.range, 'enemy');
+    } else if (action === 'ability') {
+      console.log('params', params);
     }
   },
 

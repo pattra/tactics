@@ -1,5 +1,6 @@
 'use strict';
 
+const Abilities = require('../constants/abilities').abilitiesDict;
 const Preview = require('../entities/charBattlePreview');
 const Detail = require('../entities/charBattleDetail');
 
@@ -27,7 +28,12 @@ const PlayerCharacter = function (game, x, y, properties) {
   this.baseStats = properties.baseStats;
   this.currentStats = _.clone(properties.baseStats);
 
-  this.preview = new Preview(game, x, y, properties);
+  this.abilities = {};
+  properties.abilities.forEach(a => {
+    this.abilities[a] = Abilities[a];
+  });
+
+  this.preview = new Preview(game, x, y, { name: this.name, baseStats: properties.baseStats, abilities: this.abilities });
   this.detail = new Detail(game, x, y, properties, this.UIHandler);
 
   const style = { font: '24px Arial', fill: '#fff' };
