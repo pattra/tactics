@@ -5,7 +5,8 @@ this.abilitiesDict = {
     name: 'Lesser Heal',
     desc: 'Restore HP.',
     amt: 1,
-    target: 'ally', // ally vs oppose
+    targetSide: 'ally', // ally vs oppose
     isDamaging: false,
+    range: 'ranged',
   },
 };

@@ -33,8 +33,10 @@ const PlayerCharacter = function (game, x, y, properties) {
     this.abilities[a] = Abilities[a];
   });
 
-  this.preview = new Preview(game, x, y, { name: this.name, baseStats: properties.baseStats, abilities: this.abilities });
-  this.detail = new Detail(game, x, y, properties, this.UIHandler);
+  console.log('from playerC', this.abilities);
+
+  this.preview = new Preview(game, x, y, { name: this.name, baseStats: properties.baseStats });
+  this.detail = new Detail(game, x, y, { name: this.name, baseStats: properties.baseStats, abilities: this.abilities }, this.UIHandler);
 
   const style = { font: '24px Arial', fill: '#fff' };
   const damageText = game.add.text(this.sprite.x, this.sprite.y, '', style);
@@ -44,20 +46,20 @@ const PlayerCharacter = function (game, x, y, properties) {
     this.preview.toggleDisplay(cursorOn);
   };
 
-  this.toggleSelect = () => {
-    this.detail.toggleDisplay();
-  };
-
-  this.toggleDisplay = () => {
-    this.detail.toggleDisplay();
-  };
+  // this.toggleSelect = () => {
+  //   this.detail.toggleDisplay();
+  // };
+  //
+  // this.toggleDisplay = () => {
+  //   this.detail.toggleDisplay();
+  // };
 
   this.startTurn = () => {
-    this.toggleDisplay();
+    this.detail.showDisplay();
   };
 
   this.endTurn = () => {
-    this.toggleDisplay();
+    this.detail.hideAll();
   };
 
   this.changeHP = (amt) => {

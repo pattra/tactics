@@ -58,7 +58,7 @@ const LEVEL_MAP = {
       baseStats: {
         hp: 3,
         attack: 1,
-        speed: 15,
+        speed: 18,
       },
       abilities: [],
       range: 'spread',
@@ -521,14 +521,34 @@ Game.prototype = {
     this._manageTurn();
   },
 
-  _targetCharacter: function (origin, target, neighbors) {
-    let recipMap = this.enemyMap;
-    let actor = this.playerMap[origin].character;
-    let recip = this.enemyMap[target].character;
+  _setUpTarget: function (map, origin, loc, neighbors, ability) {
+    console.log('setting up target', ability);
+    let val = map[loc];
 
-    recip.changeHP(-1 * actor.currentStats.attack);
+    val.character.sprite.events.onInputDown.removeAll();
+    val.character.sprite.events.onInputDown.add(() => { this._targetCharacter(origin, loc, neighbors, ability); });
+
+    val.tile.inputEnabled = true;
+    val.tile.events.onInputDown.add(() => { this._targetCharacter(origin, loc, neighbors, ability); });
+    this._setTileHover(map, val.tile, val.character.sprite, 'attack', neighbors);
+  },
+
+  _enemySetUpTarget: function (map, loc, neighbors) {
+    map[loc].tile.setStatus('attack');
+    neighbors.forEach((n) => {
+      map[n.loc].tile.setStatus('affect');
+    });
+  },
+
+  _targetCharacter: function (origin, target, neighbors, ability) {
+    let recipMap = ability.targetSide === 'ally' ? this.playerMap : this.enemyMap;
+    let actor = this.playerMap[origin].character;
+    let recip = recipMap[target].character;
+    let amt = !ability ? -1 * actor.currentStats.attack : ability.amt;
+
+    recip.changeHP(amt);
     neighbors.forEach(n => {
-      if (recipMap[n.loc].character) recipMap[n.loc].character.changeHP(-1 * actor.currentStats.attack);
+      if (recipMap[n.loc].character) recipMap[n.loc].character.changeHP(amt);
     });
     this._clearMap(recipMap);
 
@@ -546,24 +566,6 @@ Game.prototype = {
     });
     this._clearMap(recipMap);
     setTimeout(this._manageTurn.bind(this), 1000);
-  },
-
-  _setUpTarget: function (map, origin, loc, neighbors) {
-    let val = map[loc];
-
-    val.character.sprite.events.onInputDown.removeAll();
-    val.character.sprite.events.onInputDown.add(() => { this._targetCharacter(origin, loc, neighbors); });
-
-    val.tile.inputEnabled = true;
-    val.tile.events.onInputDown.add(() => { this._targetCharacter(origin, loc, neighbors); });
-    this._setTileHover(map, val.tile, val.character.sprite, 'attack', neighbors);
-  },
-
-  _enemySetUpTarget: function (map, loc, neighbors) {
-    map[loc].tile.setStatus('attack');
-    neighbors.forEach((n) => {
-      map[n.loc].tile.setStatus('affect');
-    });
   },
 
   _setTileHover: function (map, tile, char, frameName, neighbors) {
@@ -596,13 +598,14 @@ Game.prototype = {
     });
   },
 
-  _enableTargeting: function (origin, range, targetSide) {
+  _enableTargeting: function (origin, range, targetSide, ability) {
+    console.log('enabling', ability);
     this.mapClear = false;
     const map = targetSide === 'enemy' ? this.enemyMap : this.playerMap;
     const targets = this.getTargets[range].bind(this)(origin, targetSide);
 
     targets.forEach((t, index) => {
-      this._setUpTarget(map, origin, t.target.loc, t.neighbors);
+      this._setUpTarget(map, origin, t.target.loc, t.neighbors, ability);
     });
   },
 
@@ -615,7 +618,8 @@ Game.prototype = {
     } else if (action === 'attack') {
       this._enableTargeting(loc, params.range, 'enemy');
     } else if (action === 'ability') {
-      console.log('params', params);
+      const side = params.targetSide === 'ally' ? this.playerMap : this.enemyMap;
+      this._enableTargeting(loc, params.range, side, params);
     }
   },
 

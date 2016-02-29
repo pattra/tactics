@@ -11,13 +11,26 @@ const CharBattleDetail = function (game, x, y, properties, handlerFn) {
   const handler = handlerFn;
   const style = { font: '24px Arial', fill: '#ffffff' };
 
-  this.toggleDisplay = () => {
-    vitalsDisplay.visible = !vitalsDisplay.visible;
+  this.showDisplay = () => {
+    vitalsDisplay.visible = true;
   };
 
-  this.toggleAbilities = () => {
+  this.showAbilities = () => {
+    vitalsDisplay.visible = false;
+    abilityDisplay.visible = true;
+  };
+
+  this.hideAbilities = () => {
+    abilityDisplay.visible = false;
+  };
+
+  this.hideAll = () => {
+    vitalsDisplay.visible = false;
+    abilityDisplay.visible = false;
+  };
+
+  this.toggleDisplay = () => {
     vitalsDisplay.visible = !vitalsDisplay.visible;
-    abilityDisplay.visible = !abilityDisplay.visible;
   };
 
   this.updateHP = (current, max) => {
@@ -39,13 +52,13 @@ const CharBattleDetail = function (game, x, y, properties, handlerFn) {
 
   text.ability = game.add.text(0, game.world.centerY + 200, 'Ability', style, vitalsDisplay);
   text.ability.inputEnabled = true;
-  text.ability.events.onInputDown.add(this.toggleAbilities);
+  text.ability.events.onInputDown.add(this.showAbilities);
 
   /* ability panel */
   for (let a in properties.abilities) {
-    let aText = game.add.text(0, game.world.centerY + (text.abilities.length * 100), properties.abilities[a], style, abilityDisplay);
+    let aText = game.add.text(0, game.world.centerY + (text.abilities.length * 100), properties.abilities[a].name, style, abilityDisplay);
     aText.inputEnabled = true;
-    aText.events.onInputDown.add(() => { handler('ability', { ability: properties.abilities[a] }); });
+    aText.events.onInputDown.add(() => { handler('ability', properties.abilities[a]); });
     text.abilities.push(aText);
   }
 
