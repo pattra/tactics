@@ -22,6 +22,7 @@ const CharBattleDetail = function (game, x, y, properties, handlerFn) {
 
   this.hideAbilities = () => {
     abilityDisplay.visible = false;
+    vitalsDisplay.visible = true;
   };
 
   this.hideAll = () => {
@@ -53,6 +54,10 @@ const CharBattleDetail = function (game, x, y, properties, handlerFn) {
   text.ability = game.add.text(0, game.world.centerY + 200, 'Ability', style, vitalsDisplay);
   text.ability.inputEnabled = true;
   text.ability.events.onInputDown.add(this.showAbilities);
+
+  text.cancelAbility = game.add.text(0, game.world.centerY + 200, 'Back', style, abilityDisplay);
+  text.cancelAbility.inputEnabled = true;
+  text.cancelAbility.events.onInputDown.add(this.hideAbilities);
 
   /* ability panel */
   for (let a in properties.abilities) {

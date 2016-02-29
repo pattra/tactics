@@ -452,6 +452,8 @@ Game.prototype = {
 
         if (!this.mapClear) {
           this._clearMap(this.enemyMap);
+          this._clearMap(this.playerMap);
+          this.mapClear = true;
         }
       }
     };
