@@ -13,16 +13,8 @@ const EnemyCharacter = function (game, x, y, properties) {
   this.name = properties.name;
   this.range = properties.range;
   this.team = properties.team;
-  this.baseStats = {
-    hp: properties.hp,
-    attack: properties.attack,
-    speed: properties.speed,
-  };
-  this.currentStats = {
-    hp: properties.hp,
-    attack: properties.attack,
-    speed: properties.speed,
-  };
+  this.baseStats = properties.baseStats;
+  this.currentStats = _.clone(properties.baseStats);
 
   const style = { font: '24px Arial', fill: '#fff' };
   const damageText = game.add.text(this.sprite.x, this.sprite.y, '', style);

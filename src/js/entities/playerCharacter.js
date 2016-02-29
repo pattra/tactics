@@ -22,19 +22,13 @@ const PlayerCharacter = function (game, x, y, properties) {
     }
   };
 
+  this.name = properties.name;
+
+  this.baseStats = properties.baseStats;
+  this.currentStats = _.clone(properties.baseStats);
+
   this.preview = new Preview(game, x, y, properties);
   this.detail = new Detail(game, x, y, properties, this.UIHandler);
-  this.name = properties.name;
-  this.baseStats = {
-    hp: properties.hp,
-    attack: properties.attack,
-    speed: properties.speed,
-  };
-  this.currentStats = {
-    hp: properties.hp,
-    attack: properties.attack,
-    speed: properties.speed,
-  };
 
   const style = { font: '24px Arial', fill: '#fff' };
   const damageText = game.add.text(this.sprite.x, this.sprite.y, '', style);
@@ -62,6 +56,7 @@ const PlayerCharacter = function (game, x, y, properties) {
 
   this.changeHP = (amt) => {
     this.currentStats.hp = this.currentStats.hp + amt;
+    console.log(this.currentStats, this.currentStats.hp);
 
     // damage anim
     damageText.x = this.sprite.x;

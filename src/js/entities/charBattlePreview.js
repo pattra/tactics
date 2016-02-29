@@ -9,7 +9,7 @@ const CharBattlePreview = function (game, x, y, properties) {
 
   /* preview panel */
   this.text.name = game.add.text(game.world.centerX, game.world.centerY, properties.name, style, this.vitals);
-  this.text.hp = game.add.text(game.world.centerX, game.world.centerY + 50, properties.hp + '/' + properties.hp, style, this.vitals);
+  this.text.hp = game.add.text(game.world.centerX, game.world.centerY + 50, properties.baseStats.hp + '/' + properties.baseStats.hp, style, this.vitals);
 
   this.toggleDisplay = (cursorOn) => {
     this.vitals.visible = cursorOn;
