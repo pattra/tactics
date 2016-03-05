@@ -1,6 +1,7 @@
 'use strict';
 
 const Abilities = require('../constants/abilities').abilitiesDict;
+const Status = require('../constants/statusEffects').statusDict;
 const Preview = require('../entities/charBattlePreview');
 const Detail = require('../entities/charBattleDetail');
 
@@ -27,6 +28,8 @@ const PlayerCharacter = function (game, x, y, properties) {
 
   this.baseStats = properties.baseStats;
   this.currentStats = _.clone(properties.baseStats);
+  this.suppressionCounter = 0;
+  this.isSuppressed = false;
 
   this.abilities = {};
   properties.abilities.forEach(a => {
@@ -93,6 +96,15 @@ const PlayerCharacter = function (game, x, y, properties) {
     this.loc = loc;
     this.sprite.x = x;
     this.sprite.y = y;
+  };
+
+  this.incSuppress = () => {
+    this.suppressionCounter++;
+
+    if (this.suppressionCounter === 3) {
+      console.log('suppressed!');
+      this.suppressionCounter = 0;
+    }
   };
 
   this.onClick = () => {

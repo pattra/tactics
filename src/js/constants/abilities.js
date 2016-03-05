@@ -1,7 +1,7 @@
 'use strict';
 
 this.abilitiesDict = {
-  heal: {
+  heal1: {
     name: 'Lesser Heal',
     desc: 'Restore HP.',
     amt: 1,

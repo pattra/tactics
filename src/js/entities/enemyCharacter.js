@@ -1,5 +1,6 @@
 'use strict';
 
+const Status = require('../constants/statusEffects').statusDict;
 const Preview = require('../entities/charBattlePreview');
 
 const EnemyCharacter = function (game, x, y, properties) {
@@ -16,6 +17,9 @@ const EnemyCharacter = function (game, x, y, properties) {
   this.baseStats = properties.baseStats;
   this.currentStats = _.clone(properties.baseStats);
 
+  this.suppressionCounter = 2;
+  this.isSuppressed = false;
+
   const style = { font: '24px Arial', fill: '#fff' };
   const damageText = game.add.text(this.sprite.x, this.sprite.y, '', style);
 
@@ -31,6 +35,10 @@ const EnemyCharacter = function (game, x, y, properties) {
 
   this.startTurn = () => {
     console.log('enemyCharacter', this.name, 'starting turn');
+    if (this.isSuppressed) {
+      console.log('suppressed this turn');
+    }
+
     setTimeout(this.getTargets, 1000);
   };
 
@@ -73,6 +81,21 @@ const EnemyCharacter = function (game, x, y, properties) {
         this.preview.updateHP(this.currentStats.hp, this.baseStats.hp);
       }
     }, 1000);
+  };
+
+  this.incSuppress = () => {
+    this.suppressionCounter++;
+
+    if (this.suppressionCounter === 3) {
+      console.log('suppressed!');
+      this.suppressionCounter = 0;
+      this.isSuppressed = true;
+      const mods = Status.suppressed.statMods;
+      for (let stat in mods) {
+        if (this.currentStats[stat]) this.currentStats[stat] = this.currentStats[stat] * mods[stat];
+        console.log('comparison', this.baseStats[stat], this.currentStats[stat]);
+      }
+    }
   };
 
   this.changeLoc = (loc, x, y) => {

@@ -19,7 +19,7 @@ const PLAYER_FILE = {
         magic: 1,
         speed: 17,
       },
-      abilities: ['heal'],
+      abilities: ['heal1'],
       range: 'ranged',
       team: 'player',
     },
@@ -58,7 +58,7 @@ const LEVEL_MAP = {
       baseStats: {
         hp: 3,
         attack: 1,
-        speed: 18,
+        speed: 10,
       },
       abilities: [],
       range: 'spread',
@@ -548,9 +548,14 @@ Game.prototype = {
     let recip = recipMap[target].character;
     let amt = !ability ? -1 * actor.currentStats.attack : ability.amt;
 
+    // TODO: some ability flag that definse whether it's kosher for suppression
     recip.changeHP(amt);
+    if (!ability) recip.incSuppress();
     neighbors.forEach(n => {
-      if (recipMap[n.loc].character) recipMap[n.loc].character.changeHP(amt);
+      if (recipMap[n.loc].character) {
+        recipMap[n.loc].character.changeHP(amt);
+        if (!ability) recipMap[n.loc].character.incSuppress();
+      }
     });
     this._clearMap(recipMap);
 
