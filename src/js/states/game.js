@@ -562,14 +562,18 @@ Game.prototype = {
     setTimeout(this._manageTurn.bind(this), 1000);
   },
 
-  _enemyTargetCharacter: function (origin, target, neighbors) {
+  _enemyTargetCharacter: function (origin, target, neighbors, ability) {
     let recipMap = this.playerMap;
     let actor = this.enemyMap[origin].character;
     let recip = recipMap[target].character;
 
     recip.changeHP(-1 * actor.currentStats.attack);
+    if (!ability) recip.incSuppress();
     neighbors.forEach(n => {
-      if (recipMap[n.loc].character) recipMap[n.loc].character.changeHP(-1 * actor.currentStats.attack);
+      if (recipMap[n.loc].character) {
+        recipMap[n.loc].character.changeHP(-1 * actor.currentStats.attack);
+        if (!ability) recipMap[n.loc].character.incSuppress();
+      }
     });
     this._clearMap(recipMap);
     setTimeout(this._manageTurn.bind(this), 1000);
@@ -606,7 +610,6 @@ Game.prototype = {
   },
 
   _enableTargeting: function (origin, range, targetSide, ability) {
-    console.log('enabling', ability);
     this.mapClear = false;
     const map = targetSide === 'enemy' ? this.enemyMap : this.playerMap;
     const targets = this.getTargets[range].bind(this)(origin, targetSide);

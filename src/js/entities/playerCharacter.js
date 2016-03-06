@@ -28,15 +28,13 @@ const PlayerCharacter = function (game, x, y, properties) {
 
   this.baseStats = properties.baseStats;
   this.currentStats = _.clone(properties.baseStats);
-  this.suppressionCounter = 0;
-  this.isSuppressed = false;
+  this.suppressionCounter = 2;
+  this.statusEffects = {};
 
   this.abilities = {};
   properties.abilities.forEach(a => {
     this.abilities[a] = Abilities[a];
   });
-
-  console.log('from playerC', this.abilities);
 
   this.preview = new Preview(game, x, y, { name: this.name, baseStats: properties.baseStats });
   this.detail = new Detail(game, x, y, { name: this.name, baseStats: properties.baseStats, abilities: this.abilities }, this.UIHandler);
@@ -63,11 +61,16 @@ const PlayerCharacter = function (game, x, y, properties) {
 
   this.endTurn = () => {
     this.detail.hideAll();
+    if (this.statusEffects.suppressed) {
+      // TODO: other status effects should be checked based on duration...
+      this.suppressionCounter = 0;
+      this.statusEffects.suppressed = false;
+      this.toggleStatusEffect('suppressed', false);
+    }
   };
 
   this.changeHP = (amt) => {
     this.currentStats.hp = this.currentStats.hp + amt;
-    console.log(this.currentStats, this.currentStats.hp);
 
     // damage anim
     damageText.x = this.sprite.x;
@@ -99,11 +102,23 @@ const PlayerCharacter = function (game, x, y, properties) {
   };
 
   this.incSuppress = () => {
+    console.log('incrementing suppression for', this.name);
     this.suppressionCounter++;
 
     if (this.suppressionCounter === 3) {
-      console.log('suppressed!');
-      this.suppressionCounter = 0;
+      console.log(this.name, 'is suppressed!');
+      this.statusEffects.suppressed = true;
+      this.toggleStatusEffect('suppressed', true);
+    }
+  };
+
+  this.toggleStatusEffect = (effect, enable) => {
+    const mods = Status[effect].statMods;
+    for (let stat in mods) {
+      if (this.currentStats[stat]) {
+        this.currentStats[stat] = enable ? this.currentStats[stat] * mods[stat] : this.currentStats[stat] / mods[stat];
+        if (!enable) console.log('restoring stats for', this.name, this.currentStats[stat]);
+      }
     }
   };
 

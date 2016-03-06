@@ -20,6 +20,8 @@ const EnemyCharacter = function (game, x, y, properties) {
   this.suppressionCounter = 2;
   this.isSuppressed = false;
 
+  this.statusEffects = {};
+
   const style = { font: '24px Arial', fill: '#fff' };
   const damageText = game.add.text(this.sprite.x, this.sprite.y, '', style);
 
@@ -35,15 +37,17 @@ const EnemyCharacter = function (game, x, y, properties) {
 
   this.startTurn = () => {
     console.log('enemyCharacter', this.name, 'starting turn');
-    if (this.isSuppressed) {
-      console.log('suppressed this turn');
-    }
-
     setTimeout(this.getTargets, 1000);
   };
 
   this.endTurn = () => {
-    console.log('ending enemy turn');
+    console.log('ending enemy turn', this.statusEffects);
+    if (this.statusEffects.suppressed) {
+      // TODO: other status effects should be checked based on duration...
+      this.suppressionCounter = 0;
+      this.statusEffects.suppressed = false;
+      this.toggleStatusEffect('suppressed', false);
+    }
   };
 
   this.getTargets = () => {
@@ -88,12 +92,17 @@ const EnemyCharacter = function (game, x, y, properties) {
 
     if (this.suppressionCounter === 3) {
       console.log('suppressed!');
-      this.suppressionCounter = 0;
-      this.isSuppressed = true;
-      const mods = Status.suppressed.statMods;
-      for (let stat in mods) {
-        if (this.currentStats[stat]) this.currentStats[stat] = this.currentStats[stat] * mods[stat];
-        console.log('comparison', this.baseStats[stat], this.currentStats[stat]);
+      this.statusEffects.suppressed = true;
+      this.toggleStatusEffect('suppressed', true);
+    }
+  };
+
+  this.toggleStatusEffect = (effect, enable) => {
+    const mods = Status[effect].statMods;
+    for (let stat in mods) {
+      if (this.currentStats[stat]) {
+        this.currentStats[stat] = enable ? this.currentStats[stat] * mods[stat] : this.currentStats[stat] / mods[stat];
+        if (!enable) console.log('restoring stats', this.name, this.currentStats[stat]);
       }
     }
   };
